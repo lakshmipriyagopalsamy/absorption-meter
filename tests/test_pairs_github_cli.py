@@ -163,3 +163,21 @@ def test_cli_end_to_end(repo, tmp_path, capsys):
     assert main(["analyze", repo.path, "--keep-current-month"]) == 0
     md = capsys.readouterr().out
     assert "## Decision" in md and "## Paired metrics" in md and "Hold" in md
+
+
+def test_team_verification_control_takes_precedence_over_proxy():
+    # The proxy (code changes without test changes) is flat, but the team's control weakens.
+    r = rows(QUIET + BURST, [0.10] * 9, [1.2] * 9)
+    for m, v in zip(r, [0.90] * 6 + [0.70] * 3):
+        m.critical_verified = v
+    pair = by_name(evaluate(analysis(r)))["Deployment frequency"]
+    assert pair.status == DEBT and "critical requirements" in pair.indicator
+    assert recommend(analysis(r)).rules == ["R3"]   # AR is flat here, so no R1
+    # Mutation score, when given, is preferred over the share of critical requirements verified.
+    for m in r:
+        m.mutation_score = 0.8
+    pair = by_name(evaluate(analysis(r)))["Deployment frequency"]
+    assert pair.status == OK and "mutation" in pair.indicator
+    # Without either, the repository measure is labelled a proxy.
+    plain = by_name(evaluate(analysis(rows(QUIET + BURST, [0.10] * 9, [1.2] * 9))))["Deployment frequency"]
+    assert "proxy" in plain.indicator

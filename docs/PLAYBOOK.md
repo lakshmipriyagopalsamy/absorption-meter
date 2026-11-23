@@ -39,7 +39,7 @@ that you are taking on change faster than you can absorb it.
 | Debt | How it shows up with AI | CATS control | Leading indicator | Paired DORA metric |
 |---|---|---|---|---|
 | **Contract** | Schemas or field meanings change silently; interfaces assumed, never declared | **C**: versioned schemas, consumer-driven contract tests | Contract drift: breaking schema changes without a version bump, per 100 changes | Change failure rate |
-| **Verification** | Tests mirror the implementation: green, but behavior unchecked | **A**: acceptance tests from the spec, property and mutation tests | Verification effectiveness: code changes merged without test changes; mutation score. Rework rate as corroborating outcome | Deployment frequency |
+| **Verification** | Tests mirror the implementation: green, but behavior unchecked | **A**: acceptance tests from the spec, property and mutation tests | Verification effectiveness: mutation score on critical behavior, or critical requirements with automated tests. Proxy: code changes without test changes. Outcome: rework rate | Deployment frequency |
 | **Observability** | New code paths ship without instrumentation; failures found late | **T**: SLOs, instrumentation as part of done | Telemetry coverage; time to detect | Recovery time |
 | **Coupling** | Each change touches more of the system | **S**: simplification budget, deletion, module boundaries | Change cost: areas and lines per change | Lead time |
 | **Decision** | Rubber-stamp reviews, undocumented hotfixes, no clear owner | **Governance** (below) | Decision latency; review depth relative to PR size | Lead time |
@@ -56,7 +56,7 @@ propositions test):
 
 | DORA metric (outcome) | Paired indicator (earlier signal) |
 |---|---|
-| Deployment frequency | Verification effectiveness: code changes merged without tests, or mutation score. Rework rate, itself a DORA metric, corroborates |
+| Deployment frequency | Verification effectiveness: mutation score on critical behavior, or the share of critical requirements with automated verification. The share of code changes merged without test changes is a supporting proxy: some valid changes need no new tests, and new tests need not be good ones. Rework rate, itself a DORA metric, corroborates |
 | Lead time | Decision latency, and change cost |
 | Change failure rate | Contract drift |
 | Recovery time | Telemetry coverage, and time to detect |
@@ -207,8 +207,8 @@ Exactly what `absorption-meter` computes. Defaults are in brackets; all are conf
 | P (production) | Σ *s(c)* over the month's matured changes | size-weighted changes / month |
 | Reworked | Within *W* days of merge, a later change reverts it (`This reverts commit <sha>`), or a later change whose message matches *fix, bug, hotfix, regression, revert, rollback, broke, patch* touches at least one of the same files | yes / no |
 | Rework rate | Reworked matured changes ÷ matured changes (a count, not size-weighted). A DORA outcome, used here to corroborate | share |
-| Verification effectiveness (repository) | Share of the month's code changes merged without touching any test file. Test files follow common conventions (`test/`, `tests/`, `spec/`, `__tests__/`, `test_*.py`, `*_test.go`, `*.test.ts`, `*_spec.rb`, `*Test.java` …); changes touching only documentation or configuration are left out. Observable at merge; no window | share (lower is better) |
-| Verification effectiveness (team) | Team-reported mutation score on critical test suites (`mutation_score` in the team CSV); used instead of the repository measure when present | 0–1 (higher is better) |
+| Verification proxy (repository) | Share of the month's code changes merged without touching any test file. Test files follow common conventions (`test/`, `tests/`, `spec/`, `__tests__/`, `test_*.py`, `*_test.go`, `*.test.ts`, `*_spec.rb`, `*Test.java` …); changes touching only documentation or configuration are left out. Observable at merge; no window | share (lower is better) |
+| Verification effectiveness (team, primary) | Team-reported mutation score on critical behavior (`mutation_score`), or the share of critical requirements with automated verification (`critical_verified`), in the team CSV. Either replaces the repository proxy when present; mutation score is preferred if both are given | 0–1 (higher is better) |
 | A (absorption) | Σ *s(c)* over matured changes not reworked. The full model also requires a first-run CI pass; without CI data the tool computes the repository proxy, **AR_repo** | size-weighted changes / month |
 | AR | A ÷ P | 0–1 |
 | D (delivery debt) | Running total of P − A. Records debt incurred and never decreases; remediation is tracked separately | size-weighted changes |

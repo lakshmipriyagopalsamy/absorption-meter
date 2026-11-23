@@ -73,8 +73,9 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
         cols += [("median_lead_hours", "Lead h"), ("median_first_review_hours", "1st review h"),
                  ("review_comments_per_100_lines", "Comments/100 lines")]
     if analysis.team_data:
-        cols += [("time_to_detect_hours", "Detect h"), ("telemetry_coverage", "Telemetry"),
-                 ("mutation_score", "Mutation")]
+        team = [("time_to_detect_hours", "Detect h"), ("telemetry_coverage", "Telemetry"),
+                ("mutation_score", "Mutation"), ("critical_verified", "Critical verified")]
+        cols += [(a, l) for a, l in team if any(getattr(r, a) is not None for r in analysis.months)]
     out.append("| " + " | ".join(label for _, label in cols) + " |")
     out.append("|" + "---|" * len(cols))
     for row in analysis.months:

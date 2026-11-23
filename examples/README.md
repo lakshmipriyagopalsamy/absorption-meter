@@ -40,6 +40,7 @@ to commit `3e47189a707c739ee1278a28a3b845f5834574e6`.
 | `report.md`, `report.json` | The report as of October 2026 |
 | `monthly.csv` | Month-by-month measures (final values) |
 | `rule_timeline.md`, `timeline.csv` | The decision rules replayed month by month, using only history available at the time |
+| `robust/` | The same replay with the median/MAD baseline (`--robust`) |
 | `ai_signals.csv`, `ai_files.csv` | Visible AI-assistance signals: AI co-author or agent commits per month, and when AI instruction files were added |
 | `count_ai_signals.py` | Recomputes the AI signals from a checkout (counts only) |
 

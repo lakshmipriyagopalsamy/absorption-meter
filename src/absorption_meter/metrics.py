@@ -76,6 +76,7 @@ class MonthStats:
     time_to_detect_hours: Optional[float] = None
     telemetry_coverage: Optional[float] = None
     mutation_score: Optional[float] = None
+    critical_verified: Optional[float] = None
     # Filled from pull-request data when available.
     prs: Optional[int] = None
     median_lead_hours: Optional[float] = None
@@ -258,6 +259,7 @@ TEAM_COLUMNS = {
     "time_to_detect_hours": float,
     "telemetry_coverage": float,
     "mutation_score": float,
+    "critical_verified": float,
     "change_failure_rate": float,
     "deployments": int,
 }
@@ -269,6 +271,7 @@ def load_team_metrics(analysis: Analysis, path: str) -> None:
     Columns: ``month`` (YYYY-MM) plus any of ``recovery_hours``,
     ``time_to_detect_hours``, ``telemetry_coverage`` (0-1, share of changes that
     ship with instrumentation), ``mutation_score`` (0-1, on critical test suites),
+    ``critical_verified`` (0-1, share of critical requirements with automated verification),
     ``change_failure_rate`` (0-1) and ``deployments``.
     Team values replace the repository proxies for the same month.
     """

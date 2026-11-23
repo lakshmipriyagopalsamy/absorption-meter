@@ -15,6 +15,7 @@ $AM analyze --input examples/demo/changes.jsonl --team-metrics examples/demo/tea
 $AM analyze --input examples/homebrew/changes.jsonl -o examples/homebrew/report.md
 $AM analyze --input examples/homebrew/changes.jsonl --format json -o examples/homebrew/report.json
 $PY scripts/rule_timeline.py examples/homebrew/changes.jsonl examples/homebrew --from 2025-01
+$PY scripts/rule_timeline.py examples/homebrew/changes.jsonl examples/homebrew/robust --from 2025-01 --robust
 
 # Paper figures.
 $PY scripts/simulate_model.py paper/model.dat

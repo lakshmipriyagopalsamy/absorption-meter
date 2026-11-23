@@ -131,6 +131,7 @@ def indicators(analysis: Analysis, s: Settings) -> Dict[str, Trend]:
         "rework_rate": trend(rows, "rework_rate", s, abs_min=0.02),
         "untested_share": trend(rows, "untested_share", s, abs_min=0.03),
         "mutation_score": trend(rows, "mutation_score", s, abs_min=0.03),
+        "critical_verified": trend(rows, "critical_verified", s, abs_min=0.03),
         "mean_dirs": trend(rows, "mean_dirs", s),
         "median_lines": trend(rows, "median_lines", s),
         "contract_drift_per_100": trend(rows, "contract_drift_per_100", s, abs_min=0.5),
@@ -153,15 +154,20 @@ def evaluate(analysis: Analysis, settings: Optional[Settings] = None) -> List[Pa
     window = f"needs {s.recent + s.baseline} months of history"
     results: List[PairResult] = []
 
-    # 1. Deployment frequency <-> verification effectiveness (verification). Rework rate is itself a DORA
-    #    outcome, so it corroborates the reading rather than serving as the leading signal.
+    # 1. Deployment frequency <-> verification effectiveness (verification). The primary indicator is a
+    #    team-reported control (mutation score on critical behavior, or the share of critical requirements
+    #    with automated verification); without one, the share of code changes merged without test changes
+    #    is a supporting proxy. Rework rate is itself a DORA outcome, so it only corroborates.
     df_key = "releases" if analysis.releases_used else "changes"
     df_name = "Deployment frequency (" + ("releases/month" if analysis.releases_used else "merged changes/month, proxy") + ")"
     df, rework = t[df_key], t["rework_rate"]
     if t["mutation_score"].direction != NA:
         verif, verif_name, weakening = t["mutation_score"], "Verification effectiveness (mutation score)", t["mutation_score"].direction == DOWN
+    elif t["critical_verified"].direction != NA:
+        verif = t["critical_verified"]
+        verif_name, weakening = "Verification effectiveness (critical requirements verified)", verif.direction == DOWN
     else:
-        verif, verif_name = t["untested_share"], "Verification effectiveness (code changes merged without tests)"
+        verif, verif_name = t["untested_share"], "Verification proxy (code changes merged without test changes)"
         weakening = verif.direction == UP
     available = NA not in (df.direction, verif.direction)
     status = _status(df.direction == UP, weakening, available)
@@ -262,7 +268,7 @@ def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recomm
         "contract": t["contract_drift_per_100"].direction == UP or (
             recent_drift > 0 and t["contract_drift_per_100"].direction != DOWN),
         "verification": t["rework_rate"].direction == UP or t["untested_share"].direction == UP
-                        or t["mutation_score"].direction == DOWN,
+                        or t["mutation_score"].direction == DOWN or t["critical_verified"].direction == DOWN,
         "observability": t["time_to_detect_hours"].direction == UP or t["recovery_hours"].direction == UP
                          or t["telemetry_coverage"].direction == DOWN,
         "coupling": t["mean_dirs"].direction == UP or t["median_lines"].direction == UP,

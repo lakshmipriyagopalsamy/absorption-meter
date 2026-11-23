@@ -24,7 +24,7 @@ capacity*. This work makes it measurable, shows where the debt hides, and says w
 
   | DORA metric | Paired indicator |
   |---|---|
-  | Deployment frequency | Verification effectiveness (rework rate corroborates) |
+  | Deployment frequency | Verification effectiveness: mutation score or critical requirements verified (code changes without test changes as proxy; rework rate corroborates) |
   | Lead time | Decision latency; change cost |
   | Change failure rate | Contract drift |
   | Recovery time | Telemetry coverage; time to detect |
