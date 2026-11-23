@@ -129,6 +129,8 @@ def indicators(analysis: Analysis, s: Settings) -> Dict[str, Trend]:
         "changes": trend(rows, "changes", s),
         "releases": trend(rows, "releases", s),
         "rework_rate": trend(rows, "rework_rate", s, abs_min=0.02),
+        "untested_share": trend(rows, "untested_share", s, abs_min=0.03),
+        "mutation_score": trend(rows, "mutation_score", s, abs_min=0.03),
         "mean_dirs": trend(rows, "mean_dirs", s),
         "median_lines": trend(rows, "median_lines", s),
         "contract_drift_per_100": trend(rows, "contract_drift_per_100", s, abs_min=0.5),
@@ -151,16 +153,22 @@ def evaluate(analysis: Analysis, settings: Optional[Settings] = None) -> List[Pa
     window = f"needs {s.recent + s.baseline} months of history"
     results: List[PairResult] = []
 
-    # 1. Deployment frequency <-> rework rate (verification)
+    # 1. Deployment frequency <-> verification effectiveness (verification). Rework rate is itself a DORA
+    #    outcome, so it corroborates the reading rather than serving as the leading signal.
     df_key = "releases" if analysis.releases_used else "changes"
     df_name = "Deployment frequency (" + ("releases/month" if analysis.releases_used else "merged changes/month, proxy") + ")"
     df, rework = t[df_key], t["rework_rate"]
-    available = NA not in (df.direction, rework.direction)
-    status = _status(df.direction == UP, rework.direction == UP, available)
-    reading = {DEBT: "Busier, not faster: more changes, and more of them need rework.",
-               OK: "Rework keeps pace with deployment.", INSUFFICIENT: window.capitalize() + "."}[status]
-    results.append(PairResult("Deployment frequency ↔ Rework rate", df_name, df,
-                              "Rework rate (reverted or fixed within the window)", rework,
+    if t["mutation_score"].direction != NA:
+        verif, verif_name, weakening = t["mutation_score"], "Verification effectiveness (mutation score)", t["mutation_score"].direction == DOWN
+    else:
+        verif, verif_name = t["untested_share"], "Verification effectiveness (code changes merged without tests)"
+        weakening = verif.direction == UP
+    available = NA not in (df.direction, verif.direction)
+    status = _status(df.direction == UP, weakening, available)
+    also = " Rework, the corroborating outcome, is rising too." if rework.direction == UP else ""
+    reading = {DEBT: "Busier, not faster: deployments are rising while verification weakens." + also,
+               OK: "Verification keeps pace with deployment." + also, INSUFFICIENT: window.capitalize() + "."}[status]
+    results.append(PairResult("Deployment frequency ↔ Verification effectiveness", df_name, df, verif_name, verif,
                               status, "verification", reading))
 
     # 2. Lead time <-> decision latency and change cost (decision, coupling)
@@ -230,7 +238,7 @@ def evaluate(analysis: Analysis, settings: Optional[Settings] = None) -> List[Pa
 ORDER = ("contract", "verification", "observability", "coupling")
 ACTIONS = {
     "contract": "R2 · Contracts first: version the schemas that drifted and fail CI on breaking changes.",
-    "verification": "R3 · Automated verification: acceptance tests from the spec, property or mutation tests on the reworked areas.",
+    "verification": "R3 · Automated verification: acceptance tests from the spec, property or mutation tests where verification is weakest and rework is highest.",
     "observability": "R4 · Telemetry: make instrumentation part of done; set SLOs and alerts on the new paths.",
     "coupling": "R5 · Simplification: a budget for removing coupling, sized to the share of code AI writes.",
     "decision": "R6 · Governance: cap PR size and require a decision record for high-risk changes.",
@@ -253,14 +261,15 @@ def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recomm
     fired = {
         "contract": t["contract_drift_per_100"].direction == UP or (
             recent_drift > 0 and t["contract_drift_per_100"].direction != DOWN),
-        "verification": t["rework_rate"].direction == UP,
+        "verification": t["rework_rate"].direction == UP or t["untested_share"].direction == UP
+                        or t["mutation_score"].direction == DOWN,
         "observability": t["time_to_detect_hours"].direction == UP or t["recovery_hours"].direction == UP
                          or t["telemetry_coverage"].direction == DOWN,
         "coupling": t["mean_dirs"].direction == UP or t["median_lines"].direction == UP,
         "decision": t["median_first_review_hours"].direction == UP or (
             t["median_pr_lines"].direction == UP and t["review_comments_per_100_lines"].direction == DOWN),
     }
-    # R3 applies when rework rises and contract drift doesn't explain it.
+    # R3 applies when verification weakens or rework rises, and contract drift doesn't explain it.
     if fired["contract"]:
         fired["verification"] = False
 

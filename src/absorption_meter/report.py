@@ -66,13 +66,15 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
     out.append("## Month by month")
     out.append("")
     cols = [("month", "Month"), ("changes", "Changes"), ("absorption_ratio", "AR"), ("rework_rate", "Rework"),
+            ("untested_share", "Untested"),
             ("median_lines", "Median lines"), ("mean_dirs", "Areas/change"), ("revert_rate", "Reverts"),
             ("releases", "Releases"), ("recovery_hours", "Recovery h"), ("contract_drift", "Drift")]
     if analysis.pr_data:
         cols += [("median_lead_hours", "Lead h"), ("median_first_review_hours", "1st review h"),
                  ("review_comments_per_100_lines", "Comments/100 lines")]
     if analysis.team_data:
-        cols += [("time_to_detect_hours", "Detect h"), ("telemetry_coverage", "Telemetry")]
+        cols += [("time_to_detect_hours", "Detect h"), ("telemetry_coverage", "Telemetry"),
+                 ("mutation_score", "Mutation")]
     out.append("| " + " | ".join(label for _, label in cols) + " |")
     out.append("|" + "---|" * len(cols))
     for row in analysis.months:

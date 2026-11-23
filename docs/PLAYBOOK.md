@@ -39,7 +39,7 @@ that you are taking on change faster than you can absorb it.
 | Debt | How it shows up with AI | CATS control | Leading indicator | Paired DORA metric |
 |---|---|---|---|---|
 | **Contract** | Schemas or field meanings change silently; interfaces assumed, never declared | **C**: versioned schemas, consumer-driven contract tests | Contract drift: breaking schema changes without a version bump, per 100 changes | Change failure rate |
-| **Verification** | Tests mirror the implementation: green, but behavior unchecked | **A**: acceptance tests from the spec, property and mutation tests | Rework rate | Deployment frequency |
+| **Verification** | Tests mirror the implementation: green, but behavior unchecked | **A**: acceptance tests from the spec, property and mutation tests | Verification effectiveness: code changes merged without test changes; mutation score. Rework rate as corroborating outcome | Deployment frequency |
 | **Observability** | New code paths ship without instrumentation; failures found late | **T**: SLOs, instrumentation as part of done | Telemetry coverage; time to detect | Recovery time |
 | **Coupling** | Each change touches more of the system | **S**: simplification budget, deletion, module boundaries | Change cost: areas and lines per change | Lead time |
 | **Decision** | Rubber-stamp reviews, undocumented hotfixes, no clear owner | **Governance** (below) | Decision latency; review depth relative to PR size | Lead time |
@@ -50,11 +50,13 @@ better informed, but it can't make them for you.
 
 ## 4. Paired metrics
 
-Each DORA metric lags. Read it next to the indicator that leads it:
+DORA metrics primarily describe delivery outcomes. The paired indicators are meant to give earlier
+signals about the controls that sustain those outcomes (whether they lead in practice is what the
+propositions test):
 
-| DORA metric (lags) | Paired indicator (leads) |
+| DORA metric (outcome) | Paired indicator (earlier signal) |
 |---|---|
-| Deployment frequency | Rework rate |
+| Deployment frequency | Verification effectiveness: code changes merged without tests, or mutation score. Rework rate, itself a DORA metric, corroborates |
 | Lead time | Decision latency, and change cost |
 | Change failure rate | Contract drift |
 | Recovery time | Telemetry coverage, and time to detect |
@@ -76,7 +78,7 @@ teams differ too much.
 | **R0 · Scale cautiously** | AR steady or rising, no indicator fired | Conditions support cautiously expanding AI-assisted delivery, while monitoring the paired indicators. A steady AR is not proof of safety |
 | **R1 · Hold** | P rising while AR falls | Pause expansion; use the diagnostic matrix (section 3) to identify the control requiring investment |
 | **R2** | Contract drift rising | Invest in **C** first |
-| **R3** | Rework rising, contract drift flat | Invest in **A** |
+| **R3** | Verification weakening or rework rising, and contract drift flat | Invest in **A** |
 | **R4** | Time to detect or recover rising, or telemetry coverage falling | Invest in **T** |
 | **R5** | Change cost rising | Invest in **S**: a simplification budget, sized to the share of code AI writes |
 | **R6** | Decision latency rising, or review depth falling as PRs grow | Cap PR size; require decision records for high-risk changes |
@@ -121,12 +123,13 @@ As a GitHub Action, with `fetch-depth: 0` so the whole history is available:
 You can measure every number by hand, monthly, in a spreadsheet:
 
 1. **P:** merged PRs (or deployments).
-2. **Rework:** of last month's merged PRs, how many were reverted, hotfixed, or had a fix to the same
+2. **Verification:** of last month's code changes, how many were merged without any test change?
+3. **Rework:** of last month's merged PRs, how many were reverted, hotfixed, or had a fix to the same
    files within 14 days? A ≈ P × (1 − rework share).
-3. **Contract drift:** how many API or event schema changes broke compatibility without a version bump?
-4. **Change cost:** median files or modules touched per PR.
-5. **Decision latency:** median hours from PR opened to first review.
-6. **Telemetry coverage:** of last month's changes, how many shipped with the logs, metrics or traces
+4. **Contract drift:** how many API or event schema changes broke compatibility without a version bump?
+5. **Change cost:** median lines changed, and top-level modules touched, per PR.
+6. **Decision latency:** median hours from PR opened to first review.
+7. **Telemetry coverage:** of last month's changes, how many shipped with the logs, metrics or traces
    needed to see them fail?
 
 ## 7. Getting started
@@ -203,7 +206,9 @@ Exactly what `absorption-meter` computes. Defaults are in brackets; all are conf
 | Matured change | A change whose rework window [*W* = 14 days] has fully elapsed by the analysis date (the newest change, or the replay date). Only matured changes enter P, A, AR and rework | – |
 | P (production) | Σ *s(c)* over the month's matured changes | size-weighted changes / month |
 | Reworked | Within *W* days of merge, a later change reverts it (`This reverts commit <sha>`), or a later change whose message matches *fix, bug, hotfix, regression, revert, rollback, broke, patch* touches at least one of the same files | yes / no |
-| Rework rate | Reworked matured changes ÷ matured changes (a count, not size-weighted) | share |
+| Rework rate | Reworked matured changes ÷ matured changes (a count, not size-weighted). A DORA outcome, used here to corroborate | share |
+| Verification effectiveness (repository) | Share of the month's code changes merged without touching any test file. Test files follow common conventions (`test/`, `tests/`, `spec/`, `__tests__/`, `test_*.py`, `*_test.go`, `*.test.ts`, `*_spec.rb`, `*Test.java` …); changes touching only documentation or configuration are left out. Observable at merge; no window | share (lower is better) |
+| Verification effectiveness (team) | Team-reported mutation score on critical test suites (`mutation_score` in the team CSV); used instead of the repository measure when present | 0–1 (higher is better) |
 | A (absorption) | Σ *s(c)* over matured changes not reworked. The full model also requires a first-run CI pass; without CI data the tool computes the repository proxy, **AR_repo** | size-weighted changes / month |
 | AR | A ÷ P | 0–1 |
 | D (delivery debt) | Running total of P − A. Records debt incurred and never decreases; remediation is tracked separately | size-weighted changes |

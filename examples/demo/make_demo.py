@@ -2,7 +2,7 @@
 
 A fictional team: twelve steady months, then AI-assisted development from
 January 2025. Production roughly doubles; changes grow and touch more of the
-system; more of them are reworked; two API changes break compatibility without
+system; fewer arrive with tests and more are reworked; two API changes break compatibility without
 a version bump; telemetry coverage slips. Every pair and most rules fire.
 
 Usage: python examples/demo/make_demo.py   (writes changes.jsonl and team.csv here)
@@ -44,6 +44,9 @@ def main() -> None:
             lines = int(rng.lognormvariate(3.0 if not after else 3.6, 0.6))
             files = [FileChange(f"{a}/file{rng.randint(1, 40)}.py", lines // len(areas) + 1, rng.randint(0, 5))
                      for a in areas]
+            with_tests = 0.80 if not after else 0.80 - 0.15 * (i - 11)   # verification weakens after adoption
+            if rng.random() < with_tests:
+                files.append(FileChange(f"tests/test_{areas[0]}.py", max(3, lines // 3), 0))
             sha = f"{seq:040x}"
             changes.append(Change(sha, int(when.timestamp()), [f"{seq - 1:040x}"], "", "change", "", files))
             if rng.random() < rework_p:

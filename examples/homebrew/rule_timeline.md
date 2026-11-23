@@ -12,8 +12,8 @@ Dataset commit `3e47189a707c`. Each row uses only history up to the end of that 
 | 2025-06 | 121 | 212.003 | 0.7726 | scale | R0 | – |
 | 2025-07 | 99 | 165.791 | 0.9308 | scale | R0 | – |
 | 2025-08 | 188 | 312.409 | 0.5244 | hold | R1 R3 R5 | Lead time |
-| 2025-09 | 130 | 221.646 | 0.6244 | address | R3 | Deployment frequency |
-| 2025-10 | 123 | 242.583 | 0.7436 | hold | R1 R3 | Deployment frequency |
+| 2025-09 | 130 | 221.646 | 0.6244 | address | R3 | – |
+| 2025-10 | 123 | 242.583 | 0.7436 | hold | R1 R3 | – |
 | 2025-11 | 125 | 252.539 | 0.8493 | scale | R0 | – |
 | 2025-12 | 133 | 281.806 | 0.881 | scale | R0 | – |
 | 2026-01 | 84 | 121.005 | 0.8776 | scale | R0 | – |
@@ -21,8 +21,8 @@ Dataset commit `3e47189a707c`. Each row uses only history up to the end of that 
 | 2026-03 | 162 | 266.368 | 0.7297 | address | R5 | Lead time |
 | 2026-04 | 170 | 400.443 | 0.6467 | address | R5 | Lead time |
 | 2026-05 | 264 | 553.737 | 0.5106 | hold | R1 R3 R5 | Lead time |
-| 2026-06 | 275 | 680.343 | 0.5465 | hold | R1 R3 R5 | Deployment frequency; Lead time |
-| 2026-07 | 361 | 696.331 | 0.7135 | hold | R1 R3 R5 | Deployment frequency; Lead time |
-| 2026-08 | 245 | 492.508 | 0.6387 | address | R3 R5 | Deployment frequency; Lead time |
+| 2026-06 | 275 | 680.343 | 0.5465 | hold | R1 R3 R5 | Lead time |
+| 2026-07 | 361 | 696.331 | 0.7135 | hold | R1 R3 R5 | Lead time |
+| 2026-08 | 245 | 492.508 | 0.6387 | address | R3 R5 | Lead time |
 | 2026-09 | 317 | 960.155 | 0.5864 | address | R5 | Lead time |
 | 2026-10 | 194 | 433.971 | 0.7769 | address | R5 | Lead time |

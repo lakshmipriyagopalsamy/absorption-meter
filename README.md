@@ -20,11 +20,11 @@ capacity*. This work makes it measurable, shows where the debt hides, and says w
 - Delivery debt hides in five places: **contracts, verification, observability, coupling, decisions**.
 - **CATS** raises absorption: **C**ontracts, **A**utomated verification, **T**elemetry,
   **S**implification. Human decision ownership is the governance layer beneath all four.
-- **Paired metrics.** Read each lagging DORA metric next to a leading indicator:
+- **Paired metrics.** Read each DORA outcome metric next to an earlier signal from the controls:
 
   | DORA metric | Paired indicator |
   |---|---|
-  | Deployment frequency | Rework rate |
+  | Deployment frequency | Verification effectiveness (rework rate corroborates) |
   | Lead time | Decision latency; change cost |
   | Change failure rate | Contract drift |
   | Recovery time | Telemetry coverage; time to detect |

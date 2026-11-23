@@ -27,6 +27,29 @@ FIX_PATTERN = re.compile(
 )
 _SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 
+# Test files, by common conventions across ecosystems.
+TEST_PATTERN = re.compile(
+    r"(^|/)(tests?|spec|specs|__tests__|testing|e2e)/|(^|/)test_[^/]*$|_test\.[a-z]+$|\.(test|spec)\.[a-z]+$|"
+    r"_spec\.rb$|Tests?\.(java|kt|cs|swift)$",
+    re.IGNORECASE,
+)
+# Files that are neither code nor tests: changes touching only these don't need a test.
+NON_CODE_PATTERN = re.compile(
+    r"\.(md|rst|txt|adoc|ya?ml|json|toml|ini|cfg|lock|csv|svg|png)$|(^|/)(docs?|\.github)/|(^|/)(LICENSE|CHANGELOG|"
+    r"README|AUTHORS|CODEOWNERS)[^/]*$",
+    re.IGNORECASE,
+)
+
+
+def is_untested_code_change(change: Change) -> Optional[bool]:
+    """True if the change touches code but no test file; False if it touches tests; None if it
+    touches no code at all (documentation or configuration only)."""
+    tests = [p for p in change.paths if TEST_PATTERN.search(p)]
+    code = [p for p in change.paths if not TEST_PATTERN.search(p) and not NON_CODE_PATTERN.search(p)]
+    if not code:
+        return None
+    return not tests
+
 
 @dataclass
 class MonthStats:
@@ -37,6 +60,8 @@ class MonthStats:
     mean_dirs: Optional[float] = None
     rework_rate: Optional[float] = None
     revert_rate: Optional[float] = None
+    # Leading verification signal: share of code changes merged without any test change.
+    untested_share: Optional[float] = None
     # Absorption: P = size-weighted changes whose rework window has closed,
     # A = the part of P that was not reworked. AR = A / P.
     production: Optional[float] = None
@@ -50,6 +75,7 @@ class MonthStats:
     # Team-reported (from --team-metrics); git can't see these.
     time_to_detect_hours: Optional[float] = None
     telemetry_coverage: Optional[float] = None
+    mutation_score: Optional[float] = None
     # Filled from pull-request data when available.
     prs: Optional[int] = None
     median_lead_hours: Optional[float] = None
@@ -183,6 +209,9 @@ def monthly(
             row.median_lines = float(median(c.lines for c in items))
             row.median_files = float(median(len(c.files) for c in items))
             row.mean_dirs = round(mean(len(c.top_dirs) for c in items), 3)
+            code = [u for u in (is_untested_code_change(c) for c in items) if u is not None]
+            if code:
+                row.untested_share = round(sum(code) / len(code), 4)
             observable = [c for c in items if c.timestamp <= censor_after]
             if observable:
                 row.rework_rate = round(sum(flags[c.sha] for c in observable) / len(observable), 4)
@@ -228,6 +257,7 @@ TEAM_COLUMNS = {
     "recovery_hours": float,
     "time_to_detect_hours": float,
     "telemetry_coverage": float,
+    "mutation_score": float,
     "change_failure_rate": float,
     "deployments": int,
 }
@@ -238,7 +268,8 @@ def load_team_metrics(analysis: Analysis, path: str) -> None:
 
     Columns: ``month`` (YYYY-MM) plus any of ``recovery_hours``,
     ``time_to_detect_hours``, ``telemetry_coverage`` (0-1, share of changes that
-    ship with instrumentation), ``change_failure_rate`` (0-1) and ``deployments``.
+    ship with instrumentation), ``mutation_score`` (0-1, on critical test suites),
+    ``change_failure_rate`` (0-1) and ``deployments``.
     Team values replace the repository proxies for the same month.
     """
     rows = {r.month: r for r in analysis.months}

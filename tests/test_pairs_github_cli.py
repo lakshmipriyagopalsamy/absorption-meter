@@ -13,7 +13,8 @@ def rows(changes, rework, dirs, lines=None):
     out = []
     for i, (c, r, d, l) in enumerate(zip(changes, rework, dirs, lines)):
         out.append(MonthStats(month=f"2025-{i + 1:02d}", changes=c, rework_rate=r, mean_dirs=d, median_lines=l,
-                              revert_rate=0.0, production=float(c), absorption_ratio=round(1 - r, 4)))
+                              revert_rate=0.0, production=float(c), absorption_ratio=round(1 - r, 4),
+                              untested_share=r))   # verification weakens alongside rework in these fixtures
     return out
 
 
@@ -138,7 +139,8 @@ def test_cli_end_to_end(repo, tmp_path, capsys):
     for month in range(1, 10):
         for k in range(4):
             n += 1
-            repo.commit({f"src/m{n}.py": "x\n"}, f"feature {n}", day(2025, month, 2 + k * 5))
+            repo.commit({f"src/m{n}.py": "x\n", f"tests/test_m{n}.py": "t\n"}, f"feature {n}",
+                        day(2025, month, 2 + k * 5))
     for month in range(10, 13):
         for k in range(10):
             n += 1
