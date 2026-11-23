@@ -9,7 +9,7 @@ capacity*. This work makes it measurable, shows where the debt hides, and says w
 
 | | What | Where |
 |---|---|---|
-| 📄 | **Paper:** *When AI Outpaces Absorption: A Capacity Model and the CATS Controls for Delivery Debt* | [`paper/`](paper/) ([PDF](paper/main.pdf)) |
+| 📄 | **Paper:** *When AI Outpaces Absorption: Measuring Delivery Debt and Repaying It with CATS* | [`paper/`](paper/) ([PDF](paper/main.pdf)) |
 | 📘 | **Playbook:** the framework in practice: the matrix, paired metrics, decision rules, a two-week start, a self-check | [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md) |
 | 🛠️ | **Tool:** `absorption-meter`, a CLI and GitHub Action that computes the paired metrics and flags contract drift | [`src/absorption_meter/`](src/absorption_meter/) |
 
