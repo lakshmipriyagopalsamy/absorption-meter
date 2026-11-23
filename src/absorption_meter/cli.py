@@ -1,0 +1,110 @@
+"""Command line: ``absorption-meter analyze`` and ``absorption-meter contracts``."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+from typing import List, Optional
+
+from . import __version__
+from .contracts import scan_drift
+from .gitlog import read_changes, read_tags
+from .metrics import drop_incomplete_last_month, load_team_metrics, monthly
+from .pairs import DEBT, HOLD, Settings, evaluate, recommend
+from .report import to_json, to_markdown
+
+
+def _common(p: argparse.ArgumentParser) -> None:
+    p.add_argument("path", nargs="?", default=".", help="path to a git repository (default: .)")
+    p.add_argument("--branch", default="HEAD", help="branch or ref to read (default: HEAD)")
+    p.add_argument("--since", help="only changes after this date, e.g. 2024-01-01")
+    p.add_argument("--until", help="only changes before this date")
+    p.add_argument("--include-bots", action="store_true", help="keep dependency-bot changes")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="absorption-meter",
+        description="Paired delivery metrics: see when change production outruns absorption capacity.",
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    a = sub.add_parser("analyze", help="paired metrics and monthly table")
+    _common(a)
+    a.add_argument("--rework-window", type=int, default=14, help="days after a change to look for rework (default 14)")
+    a.add_argument("--recent", type=int, default=3, help="months in the recent window (default 3)")
+    a.add_argument("--baseline", type=int, default=6, help="months in the trailing baseline (default 6)")
+    a.add_argument("--k", type=float, default=1.0, help="baseline standard deviations a move must exceed (default 1)")
+    a.add_argument("--team-metrics", metavar="CSV", help="team-reported monthly measures: month, recovery_hours, "
+                   "time_to_detect_hours, telemetry_coverage, change_failure_rate, deployments")
+    a.add_argument("--no-contracts", action="store_true", help="skip the contract-drift scan")
+    a.add_argument("--github", metavar="OWNER/REPO", help="add pull-request measures from the GitHub API")
+    a.add_argument("--max-prs", type=int, default=300, help="most PRs to read from GitHub (default 300)")
+    a.add_argument("--format", choices=("markdown", "json"), default="markdown")
+    a.add_argument("--output", "-o", help="write the report to this file instead of stdout")
+    a.add_argument("--keep-current-month", action="store_true", help="keep the unfinished current month")
+    a.add_argument("--fail-on-signal", action="store_true",
+                   help="exit with status 2 if any pair signals debt or the decision is hold")
+
+    c = sub.add_parser("contracts", help="list contract changes that broke compatibility")
+    _common(c)
+    c.add_argument("--all", action="store_true", help="also list breaking changes that bumped the major version")
+    return parser
+
+
+def _write(text: str, output: Optional[str]) -> None:
+    if output:
+        with open(output, "w", encoding="utf-8") as fh:
+            fh.write(text)
+    else:
+        sys.stdout.write(text)
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary and output != summary and os.environ.get("ABSORPTION_METER_SUMMARY") == "1":
+        with open(summary, "a", encoding="utf-8") as fh:
+            fh.write(text)
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    args = build_parser().parse_args(argv)
+    repo = os.path.abspath(args.path)
+    name = os.path.basename(repo.rstrip(os.sep))
+    changes = read_changes(repo, args.branch, args.since, args.until, include_bots=args.include_bots)
+
+    if args.command == "contracts":
+        events = scan_drift(repo, changes)
+        shown = [e for e in events if args.all or e.is_drift]
+        if not shown:
+            print("No contract drift found.")
+        for e in shown:
+            print(f"{e.sha[:8]}  {e.path}  {e.old_version} -> {e.new_version}  [{e.kind}]")
+            for b in e.breaking:
+                print(f"    {b}")
+        return 0
+
+    drift = [] if args.no_contracts else scan_drift(repo, changes)
+    analysis = monthly(changes, read_tags(repo), drift, args.rework_window)
+    if not args.keep_current_month:
+        analysis = drop_incomplete_last_month(analysis)
+    if args.github:
+        from .github import fetch_merged_prs, merge_into, pr_monthly
+
+        prs = fetch_merged_prs(args.github, args.since, args.max_prs)
+        merge_into(analysis, pr_monthly(prs))
+        name = args.github
+    if args.team_metrics:
+        load_team_metrics(analysis, args.team_metrics)
+    settings = Settings(recent=args.recent, baseline=args.baseline, k=args.k)
+    pairs = evaluate(analysis, settings)
+    rec = recommend(analysis, settings)
+
+    render = to_json if args.format == "json" else to_markdown
+    _write(render(name, analysis, pairs, rec), args.output)
+    if args.fail_on_signal and (rec.verdict == HOLD or any(p.status == DEBT for p in pairs)):
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

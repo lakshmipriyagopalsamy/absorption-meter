@@ -1,0 +1,45 @@
+name: absorption-meter
+description: Paired delivery metrics and contract-drift checks for this repository, written to the job summary.
+author: Lakshmi Priya Gopalsamy
+branding:
+  icon: activity
+  color: blue
+inputs:
+  since:
+    description: Only changes after this date (YYYY-MM-DD). Default is all history.
+    required: false
+    default: ""
+  github-prs:
+    description: "Set to 'true' to add pull-request measures (decision latency, review depth) from the GitHub API."
+    required: false
+    default: "false"
+  max-prs:
+    description: Most pull requests to read.
+    required: false
+    default: "300"
+  fail-on-signal:
+    description: "Set to 'true' to fail the step when any pair signals delivery debt."
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install absorption-meter
+      shell: bash
+      run: pip install --quiet "${{ github.action_path }}"
+    - name: Analyze
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        args=(analyze . --output absorption-report.md)
+        [ -n "${{ inputs.since }}" ] && args+=(--since "${{ inputs.since }}")
+        [ "${{ inputs.github-prs }}" = "true" ] && args+=(--github "${{ github.repository }}" --max-prs "${{ inputs.max-prs }}")
+        [ "${{ inputs.fail-on-signal }}" = "true" ] && args+=(--fail-on-signal)
+        status=0
+        absorption-meter "${args[@]}" || status=$?
+        cat absorption-report.md >> "$GITHUB_STEP_SUMMARY"
+        exit $status

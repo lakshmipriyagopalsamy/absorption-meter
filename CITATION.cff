@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this framework or tool, please cite it as below."
+title: "CATS and change absorption capacity: absorption-meter"
+type: software
+version: 0.1.0
+date-released: 2026-11-22
+license: MIT
+authors:
+  - family-names: Gopalsamy
+    given-names: Lakshmi Priya
+    orcid: "https://orcid.org/0009-0002-3628-2540"
+keywords:
+  - DORA metrics
+  - delivery debt
+  - AI-assisted software development
+  - absorption capacity
+preferred-citation:
+  type: article
+  title: "When AI Outpaces Absorption: A Capacity Model and the CATS Controls for Delivery Debt"
+  authors:
+    - family-names: Gopalsamy
+      given-names: Lakshmi Priya
+      orcid: "https://orcid.org/0009-0002-3628-2540"
+  year: 2026
+  notes: "Manuscript; publication details to be added."

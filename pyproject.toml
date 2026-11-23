@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "absorption-meter"
+version = "0.1.0"
+description = "Paired delivery metrics and contract-drift checks: see when change production outruns a system's absorption capacity."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Lakshmi Priya Gopalsamy" }]
+requires-python = ">=3.9"
+dependencies = ["PyYAML>=6.0"]
+keywords = ["DORA", "delivery metrics", "AI-assisted development", "technical debt", "OpenAPI", "mining software repositories"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+absorption-meter = "absorption_meter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
