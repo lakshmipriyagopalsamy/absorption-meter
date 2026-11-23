@@ -14,7 +14,7 @@ from .pairs import DEBT, PairResult, Recommendation
 _STATUS = {"debt-signal": "⚠️ debt signal", "no-signal": "✅ no signal", "insufficient-data": "… not enough data"}
 
 _VERDICT = {
-    "scale": "🟢 **Scale**",
+    "scale": "🟢 **Scale cautiously**",
     "hold": "🔴 **Hold**",
     "address": "🟡 **Address**",
     "insufficient-data": "⚪ **Not enough history**",
@@ -46,8 +46,9 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
     out.append(f"{_VERDICT[rec.verdict]}: {rec.reading}")
     out.append("")
     if rec.actions:
-        out.append("In this order (contracts define what to verify, verification what to observe; "
-                   "the order is a hypothesis):")
+        out.append("Suggested order: protect contracts and verify critical behavior first, and close telemetry "
+                   "gaps that block diagnosis; move simplification earlier when change cost is the dominant "
+                   "constraint. The order is a hypothesis, not a finding.")
         out.append("")
         for action in rec.actions:
             out.append(f"1. {action}")

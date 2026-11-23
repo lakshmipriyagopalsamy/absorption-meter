@@ -238,7 +238,8 @@ ACTIONS = {
 
 
 def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recommendation:
-    """Apply rules R0–R6. The C → A → T → S order is a hypothesis, not a finding."""
+    """Apply rules R0–R6. Actions come in the default order C, A, T, S (a hypothesis, not a finding);
+    when change cost is the dominant constraint, simplification may come first."""
     s = settings or Settings()
     t = indicators(analysis, s)
     rec = Recommendation(verdict=UNKNOWN)
@@ -266,14 +267,17 @@ def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recomm
     if production.direction == UP and ar.direction == DOWN:
         rec.verdict = HOLD
         rec.rules.append("R1")
-        rec.reading = "Production is rising while the absorption ratio falls: stop expanding AI throughput."
+        rec.reading = ("Production is rising while the absorption ratio falls: pause expansion and use the "
+                       "diagnostic matrix to identify the control requiring investment.")
     elif any(fired.values()):
         rec.verdict = ADDRESS
         rec.reading = "Absorption is holding, but an indicator has moved: fix it before scaling further."
     else:
         rec.verdict = SCALE
         rec.rules.append("R0")
-        rec.reading = "Absorption ratio is steady or rising and no indicator has fired: safe to expand AI use."
+        rec.reading = ("Absorption ratio is steady or rising and no indicator has fired: conditions support "
+                       "cautiously expanding AI-assisted delivery while monitoring the paired indicators. "
+                       "A steady ratio is not proof of safety.")
 
     for kind in ORDER:
         if fired[kind]:

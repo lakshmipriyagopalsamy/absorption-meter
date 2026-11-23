@@ -2,6 +2,7 @@
 and the dataset format must give the same analysis as reading the repository directly."""
 
 import json
+import math
 import os
 
 import pytest
@@ -68,3 +69,32 @@ def test_robust_baseline_ignores_one_outlier_month():
     rows = [MonthStats(month=f"2025-{i + 1:02d}", changes=v) for i, v in enumerate(values)]
     assert trend(rows, "changes").direction == "flat"                       # the spike inflates the SD
     assert trend(rows, "changes", Settings(robust=True)).direction == "up"  # median/MAD is not fooled
+
+
+def test_replay_uses_only_matured_changes():
+    """An as-of analysis must not change when later history is added (no future leakage), and changes
+    whose rework window hasn't closed by the cut-off must be left out of P and A."""
+    from datetime import datetime, timezone
+
+    from absorption_meter.gitlog import Change, FileChange
+    from absorption_meter.metrics import monthly
+
+    def ts(m, d):
+        return int(datetime(2025, m, d, 12, tzinfo=timezone.utc).timestamp())
+
+    def change(i, when, subject="change", path=None):
+        return Change(f"{i:040x}", when, [], "", subject, "", [FileChange(path or f"f{i}.py", 10, 0)])
+
+    history = [change(i, ts(m, d)) for i, (m, d) in enumerate([(1, 5), (1, 20), (2, 3), (2, 10), (3, 2), (3, 28)])]
+    cut = ts(4, 1)
+    # A fix to the 28 March change, made after the cut-off: it must not count as of March.
+    future = history + [change(99, ts(4, 3), "fix: regression", path="f5.py")]
+
+    as_of = monthly([c for c in history if c.timestamp < cut], as_of=cut)
+    with_future = monthly([c for c in future if c.timestamp < cut], as_of=cut)
+    assert as_of == with_future
+
+    march = as_of.months[-1]
+    # 28 March's window runs to 11 April, past the 1 April replay date: excluded. 2 March has matured.
+    assert march.changes == 2 and march.absorption_ratio == 1.0
+    assert march.production == round(math.log1p(10), 3)

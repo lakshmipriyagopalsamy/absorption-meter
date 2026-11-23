@@ -6,7 +6,7 @@
 
 🟡 **Address**: Absorption is holding, but an indicator has moved: fix it before scaling further.
 
-In this order (contracts define what to verify, verification what to observe; the order is a hypothesis):
+Suggested order: protect contracts and verify critical behavior first, and close telemetry gaps that block diagnosis; move simplification earlier when change cost is the dominant constraint. The order is a hypothesis, not a finding.
 
 1. R5 · Simplification: a budget for removing coupling, sized to the share of code AI writes.
 

@@ -423,7 +423,7 @@
       "R4 · Telemetry: make instrumentation part of done; set SLOs and alerts on the new paths.",
       "R5 · Simplification: a budget for removing coupling, sized to the share of code AI writes."
     ],
-    "reading": "Production is rising while the absorption ratio falls: stop expanding AI throughput."
+    "reading": "Production is rising while the absorption ratio falls: pause expansion and use the diagnostic matrix to identify the control requiring investment."
   },
   "pairs": [
     {

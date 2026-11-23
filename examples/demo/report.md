@@ -4,9 +4,9 @@
 
 ## Decision
 
-🔴 **Hold**: Production is rising while the absorption ratio falls: stop expanding AI throughput.
+🔴 **Hold**: Production is rising while the absorption ratio falls: pause expansion and use the diagnostic matrix to identify the control requiring investment.
 
-In this order (contracts define what to verify, verification what to observe; the order is a hypothesis):
+Suggested order: protect contracts and verify critical behavior first, and close telemetry gaps that block diagnosis; move simplification earlier when change cost is the dominant constraint. The order is a hypothesis, not a finding.
 
 1. R2 · Contracts first: version the schemas that drifted and fail CI on breaking changes.
 1. R4 · Telemetry: make instrumentation part of done; set SLOs and alerts on the new paths.

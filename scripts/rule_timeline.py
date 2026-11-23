@@ -52,7 +52,7 @@ def main() -> None:
             continue
         cut = month_end(r.month)
         upto = [c for c in changes if c.timestamp < cut]
-        a = monthly(upto, [t for t in tags if t[0] < cut], [d for d in drift if d.timestamp < cut])
+        a = monthly(upto, [t for t in tags if t[0] < cut], [d for d in drift if d.timestamp < cut], as_of=cut)
         rec = recommend(a, settings)
         pairs = [p.pair.split(" ↔")[0] for p in evaluate(a, settings) if p.status == DEBT]
         last = a.months[-1]
@@ -68,8 +68,9 @@ def main() -> None:
     with open(os.path.join(args.out_dir, "rule_timeline.md"), "w") as fh:
         fh.write(f"# Decision rules replayed month by month: {meta.get('source', '')}\n\n")
         fh.write(f"Dataset commit `{meta.get('commit', '')[:12]}`. Each row uses only history up to the end of "
-                 f"that month. Baseline: {'median/MAD' if args.robust else 'mean/SD'}, last 3 months vs the 6 "
-                 "before. The newest month's absorption ratio is provisional: its rework window is still open.\n\n")
+                 f"that month, and P and AR include only changes whose 14-day rework window had fully elapsed "
+                 f"by then; later changes enter once their window matures. Baseline: "
+                 f"{'median/MAD' if args.robust else 'mean/SD'}, last 3 months vs the 6 before.\n\n")
         fh.write("| As of | Changes | P | AR | Verdict | Rules | Pairs signalling debt |\n|---|---|---|---|---|---|---|\n")
         for m, n, p, ar, verdict, rules, pairs in rows:
             fh.write(f"| {m} | {n} | {p if p is not None else '–'} | {ar if ar is not None else '–'} | "

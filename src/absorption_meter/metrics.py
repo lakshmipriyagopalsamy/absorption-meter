@@ -152,13 +152,18 @@ def monthly(
     drift_events: Sequence[DriftEvent] = (),
     rework_window_days: int = 14,
     min_releases: int = 6,
+    as_of: Optional[int] = None,
 ) -> Analysis:
-    """Aggregate changes into a contiguous month-by-month table."""
+    """Aggregate changes into a contiguous month-by-month table.
+
+    A change enters P and A only once its rework window has fully elapsed by ``as_of`` (default: the
+    newest change's time). Pass the replay date as ``as_of`` to see what a team would have known then.
+    """
     if not changes:
         return Analysis([], 0, None, None, rework_window_days, False, list(drift_events))
 
     flags = rework_flags(changes, rework_window_days)
-    last_ts = max(c.timestamp for c in changes)
+    last_ts = as_of if as_of is not None else max(c.timestamp for c in changes)
     # Changes too recent for their rework window to have closed are right-censored.
     censor_after = last_ts - rework_window_days * DAY
     reverted = {c.reverted_sha for c in changes if c.reverted_sha}

@@ -24,8 +24,9 @@ Measure over a rolling window, monthly by default:
 | **AR** | Absorption ratio | A / P, between 0 and 1 |
 
 Accumulated delivery debt is the running total of change taken in but not absorbed: **D = Σ (P − A)**.
-It records debt incurred, so it only grows. Track repayment separately, as remediation work (contract
-repair, new tests, refactoring), and watch for it in AR recovering.
+It records cumulative unabsorbed change and never decreases. Track remediation separately: work that
+addresses previously unabsorbed change, such as contract repair, test improvements and refactoring.
+Remediation may improve later absorption, but it is not subtracted from D.
 
 AR is a proxy: it estimates the share of delivered change absorbed **without observable short-term
 corrective work**. It is not a direct measure of correctness, reliability or quality.
@@ -72,18 +73,20 @@ teams differ too much.
 
 | Rule | When | Do |
 |---|---|---|
-| **R0 · Scale** | AR steady or rising, no indicator fired | Safe to expand AI use |
-| **R1 · Hold** | P rising while AR falls | Stop expanding AI throughput; use the table in section 3 to find which indicator moved |
+| **R0 · Scale cautiously** | AR steady or rising, no indicator fired | Conditions support cautiously expanding AI-assisted delivery, while monitoring the paired indicators. A steady AR is not proof of safety |
+| **R1 · Hold** | P rising while AR falls | Pause expansion; use the diagnostic matrix (section 3) to identify the control requiring investment |
 | **R2** | Contract drift rising | Invest in **C** first |
 | **R3** | Rework rising, contract drift flat | Invest in **A** |
 | **R4** | Time to detect or recover rising, or telemetry coverage falling | Invest in **T** |
 | **R5** | Change cost rising | Invest in **S**: a simplification budget, sized to the share of code AI writes |
 | **R6** | Decision latency rising, or review depth falling as PRs grow | Cap PR size; require decision records for high-risk changes |
 
-**When several fire, work in the order C → A → T → S.** Contracts define what to verify, verification
-defines what to observe, and simplification lowers the cost of all three. R6 runs alongside, because
-governance sits underneath everything. *This order is a hypothesis.* It hasn't been tested yet; tell us
-if your experience differs.
+**When several fire,** prioritize contract integrity and verification of critical behavior, and close
+telemetry gaps that prevent diagnosis. The default order is C → A → T → S: contracts define what to
+verify, verification defines what to observe, and simplification lowers the cost of all three. Move
+simplification earlier when coupling or change cost is the dominant constraint. Address decision debt
+(R6) in parallel, because governance sits underneath everything. *The order is a hypothesis.* It hasn't
+been tested yet; tell us if your experience differs.
 
 ## 6. Measuring it
 
@@ -189,7 +192,35 @@ check is planned; until then, treat it as a conversation starter, not a score.
 - [ ] PR size is capped, or large PRs need an explicit reason.
 - [ ] Significant decisions leave a decision record.
 
-## 9. Help build an open benchmark
+## 9. Operational definitions
+
+Exactly what `absorption-meter` computes. Defaults are in brackets; all are configurable.
+
+| Measure | Operational definition | Unit |
+|---|---|---|
+| Change | One commit on the branch's first-parent history: a merge, a squash-merged PR or a direct commit. A merge counts once, diffed against its first parent. Lockfiles, vendored, built and binary files are dropped; changes left empty, and dependency-bot changes, are excluded | – |
+| Size weight *s(c)* | ln(1 + lines added + lines deleted) | – |
+| Matured change | A change whose rework window [*W* = 14 days] has fully elapsed by the analysis date (the newest change, or the replay date). Only matured changes enter P, A, AR and rework | – |
+| P (production) | Σ *s(c)* over the month's matured changes | size-weighted changes / month |
+| Reworked | Within *W* days of merge, a later change reverts it (`This reverts commit <sha>`), or a later change whose message matches *fix, bug, hotfix, regression, revert, rollback, broke, patch* touches at least one of the same files | yes / no |
+| Rework rate | Reworked matured changes ÷ matured changes (a count, not size-weighted) | share |
+| A (absorption) | Σ *s(c)* over matured changes not reworked. The full model also requires a first-run CI pass; without CI data the tool computes the repository proxy, **AR_repo** | size-weighted changes / month |
+| AR | A ÷ P | 0–1 |
+| D (delivery debt) | Running total of P − A. Records debt incurred and never decreases; remediation is tracked separately | size-weighted changes |
+| Contract drift | A change to an OpenAPI/Swagger or JSON Schema file that breaks compatibility while its version (`info.version`, `version` or `$id`) is unchanged. A version change that keeps the major number is also counted. *Breaking:* a removed path, operation or 2xx response; a removed response property, or one no longer required; a newly required request parameter or property; a changed type; an enum value removed from a request. Moved or deleted files are not counted | events per 100 changes / month |
+| Change cost | Median lines changed per change, and mean number of top-level directories touched per change | lines; directories |
+| Deployment frequency | Semantic-version release tags per month (when there are at least 6 in the period); otherwise merged changes per month | per month |
+| Change failure rate | Share of releases followed within 7 days by a patch release of the same major.minor; without releases, the share of changes later reverted | share |
+| Recovery time | Median hours from a failed release to its patch release, or team-reported | hours |
+| Lead time | Median hours from PR opened to merged (GitHub API) | hours |
+| Decision latency | Median hours from PR opened to the first review submitted by someone other than the author (GitHub API; bot-authored PRs excluded) | hours |
+| Review depth | Review comments per 100 changed lines, over the month's merged PRs | comments / 100 lines |
+| Unreviewed share | Merged PRs with no review by someone other than the author | share |
+| Telemetry coverage | Team-reported: the share of the month's changes that shipped with the logs, metrics or traces needed to detect their failure. Decide the checklist as a team, for example as a PR-template checkbox | share |
+| Time to detect | Team-reported: median hours from a failure starting to its detection | hours |
+| Trend | Mean of the last [3] months against the previous [6]. A move counts when the difference exceeds both [1] × the baseline spread (standard deviation, or 1.4826 × MAD with `--robust`) and a practical minimum: 2 points for rework and AR, 5 for patch-release rate and telemetry coverage, 1 for revert rate, 0.5 per 100 for drift, 20% for recovery and detection times, 10% otherwise | up / down / flat |
+
+## 10. Help build an open benchmark
 
 Teams can share anonymized monthly results so everyone can compare against a baseline that isn't their
 own. Run `absorption-meter analyze --format json`, remove anything identifying, and share the `months`
