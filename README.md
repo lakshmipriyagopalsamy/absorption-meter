@@ -7,6 +7,10 @@ outruns absorption, the gap builds up as **delivery debt**. DORA metrics measure
 can stay green while the debt grows. Practitioners have started calling the constraint *absorption
 capacity*. This work makes it measurable, shows where the debt hides, and says what to do about it.
 
+Delivery debt is broader than technical debt: technical debt is shortcuts in the code or design;
+delivery debt is change shipped faster than the team could verify, integrate, observe and decide on it.
+It can settle in the code (weak tests, coupling) or outside it (missing telemetry, unowned decisions).
+
 | | What | Where |
 |---|---|---|
 | 📄 | **Paper:** *When AI Outpaces Absorption: Measuring Delivery Debt and Repaying It with CATS* | [`paper/`](paper/) ([PDF](paper/main.pdf)) |

@@ -13,6 +13,13 @@ absorption, the gap builds up as **delivery debt**. DORA metrics measure the pip
 green while the debt grows. CATS (Contracts, Automated verification, Telemetry, Simplification) is how
 you raise absorption capacity. Paired metrics are how you see the gap before it shows up as incidents.
 
+**Delivery debt is not the same as technical debt.** Technical debt (Cunningham's metaphor) is
+shortcuts in code or design that speed delivery now and make later change costlier until they are
+repaid; it lives in the codebase. Delivery debt is change shipped faster than the delivery system could
+absorb it: verify, integrate, observe and decide on it. It can settle as technical debt (weak tests,
+growing coupling) but also outside the code (missing telemetry, decisions nobody owns). D measures its
+observable consequences, unabsorbed change, not the amount of technical debt in the code.
+
 ## 2. Three numbers
 
 Measure over a rolling window, monthly by default:
@@ -211,7 +218,7 @@ Exactly what `absorption-meter` computes. Defaults are in brackets; all are conf
 | Verification effectiveness (team, primary) | Team-reported mutation score on critical behavior (`mutation_score`), or the share of critical requirements with automated verification (`critical_verified`), in the team CSV. Either replaces the repository proxy when present; mutation score is preferred if both are given | 0–1 (higher is better) |
 | A (absorption) | Σ *s(c)* over matured changes not reworked. The full model also requires a first-run CI pass; without CI data the tool computes the repository proxy, **AR_repo** | size-weighted changes / month |
 | AR | A ÷ P | 0–1 |
-| D (delivery debt) | Running total of P − A. Records debt incurred and never decreases; remediation is tracked separately | size-weighted changes |
+| D (delivery debt) | Running total of P − A: change shipped but not absorbed. Records debt incurred and never decreases; remediation is tracked separately. Not a measure of technical debt in the code | size-weighted changes |
 | Contract drift | A change to an OpenAPI/Swagger or JSON Schema file that breaks compatibility while its version (`info.version`, `version` or `$id`) is unchanged. A version change that keeps the major number is also counted. *Breaking:* a removed path, operation or 2xx response; a removed response property, or one no longer required; a newly required request parameter or property; a changed type; an enum value removed from a request. Moved or deleted files are not counted | events per 100 changes / month |
 | Change cost | Median lines changed per change, and mean number of top-level directories touched per change | lines; directories |
 | Deployment frequency | Semantic-version release tags per month (when there are at least 6 in the period); otherwise merged changes per month | per month |
