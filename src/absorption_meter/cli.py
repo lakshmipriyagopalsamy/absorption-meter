@@ -36,7 +36,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--rework-window", type=int, default=14, help="days after a change to look for rework (default 14)")
     a.add_argument("--recent", type=int, default=3, help="months in the recent window (default 3)")
     a.add_argument("--baseline", type=int, default=6, help="months in the trailing baseline (default 6)")
-    a.add_argument("--k", type=float, default=1.0, help="baseline standard deviations a move must exceed (default 1)")
+    a.add_argument("--k", type=float, default=1.0, help="baseline spreads a move must exceed (default 1)")
+    a.add_argument("--robust", action="store_true",
+                   help="use the baseline median and MAD instead of mean and standard deviation (resists outliers)")
+    a.add_argument("--input", metavar="JSONL", help="analyze an exported dataset instead of a repository")
     a.add_argument("--team-metrics", metavar="CSV", help="team-reported monthly measures: month, recovery_hours, "
                    "time_to_detect_hours, telemetry_coverage, change_failure_rate, deployments")
     a.add_argument("--no-contracts", action="store_true", help="skip the contract-drift scan")
@@ -47,6 +50,12 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--keep-current-month", action="store_true", help="keep the unfinished current month")
     a.add_argument("--fail-on-signal", action="store_true",
                    help="exit with status 2 if any pair signals debt or the decision is hold")
+
+    e = sub.add_parser("export", help="write the history as a portable dataset (no names, e-mails or messages)")
+    _common(e)
+    e.add_argument("--output", "-o", required=True, help="dataset file to write (JSON lines)")
+    e.add_argument("--source", default="", help="description of the source, e.g. a public repository URL")
+    e.add_argument("--no-contracts", action="store_true", help="skip the contract-drift scan")
 
     c = sub.add_parser("contracts", help="list contract changes that broke compatibility")
     _common(c)
@@ -66,11 +75,42 @@ def _write(text: str, output: Optional[str]) -> None:
             fh.write(text)
 
 
+def _within(ts: int, since: Optional[str], until: Optional[str]) -> bool:
+    from datetime import datetime, timezone
+
+    def stamp(day: str) -> int:
+        return int(datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
+
+    return (not since or ts >= stamp(since)) and (not until or ts < stamp(until))
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     args = build_parser().parse_args(argv)
+
+    if args.command == "analyze" and args.input:
+        from .dataset import load
+
+        meta, changes, tags, drift = load(args.input)
+        changes = [c for c in changes if _within(c.timestamp, args.since, args.until)]
+        drift = [d for d in drift if _within(d.timestamp, args.since, args.until)]
+        name = meta.get("source") or os.path.basename(args.input)
+        return _analyze(args, name, changes, tags, drift)
+
     repo = os.path.abspath(args.path)
     name = os.path.basename(repo.rstrip(os.sep))
     changes = read_changes(repo, args.branch, args.since, args.until, include_bots=args.include_bots)
+    # git applies --since/--until in local time; trim to exact UTC days so results don't depend on time zone.
+    changes = [c for c in changes if _within(c.timestamp, args.since, args.until)]
+
+    if args.command == "export":
+        from .dataset import save
+        from .gitlog import _git
+
+        drift = [] if args.no_contracts else scan_drift(repo, changes)
+        commit = _git(repo, ["rev-parse", args.branch]).strip()
+        save(args.output, changes, read_tags(repo), drift, args.source or name, commit)
+        print(f"wrote {len(changes)} changes and {len(drift)} drift events to {args.output} (commit {commit[:12]})")
+        return 0
 
     if args.command == "contracts":
         events = scan_drift(repo, changes)
@@ -84,7 +124,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     drift = [] if args.no_contracts else scan_drift(repo, changes)
-    analysis = monthly(changes, read_tags(repo), drift, args.rework_window)
+    return _analyze(args, name, changes, read_tags(repo), drift)
+
+
+def _analyze(args, name, changes, tags, drift) -> int:
+    analysis = monthly(changes, tags, drift, args.rework_window)
     if not args.keep_current_month:
         analysis = drop_incomplete_last_month(analysis)
     if args.github:
@@ -95,7 +139,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         name = args.github
     if args.team_metrics:
         load_team_metrics(analysis, args.team_metrics)
-    settings = Settings(recent=args.recent, baseline=args.baseline, k=args.k)
+    settings = Settings(recent=args.recent, baseline=args.baseline, k=args.k, robust=args.robust)
     pairs = evaluate(analysis, settings)
     rec = recommend(analysis, settings)
 

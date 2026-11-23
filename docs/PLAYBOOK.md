@@ -23,8 +23,12 @@ Measure over a rolling window, monthly by default:
 | **A** | Absorption | The part of P that was absorbed safely: not reverted, hotfixed or reworked within *W* days (default 14) |
 | **AR** | Absorption ratio | A / P, between 0 and 1 |
 
-Delivery debt is a level that rises with the unabsorbed part of production and falls as you repay it:
-**D(t) = D(t−1) + (P − A) − R**, where R is the work spent repaying it.
+Accumulated delivery debt is the running total of change taken in but not absorbed: **D = Σ (P − A)**.
+It records debt incurred, so it only grows. Track repayment separately, as remediation work (contract
+repair, new tests, refactoring), and watch for it in AR recovering.
+
+AR is a proxy: it estimates the share of delivered change absorbed **without observable short-term
+corrective work**. It is not a direct measure of correctness, reliability or quality.
 
 Watch AR's **trend** against your own history. A falling AR while P rises is the clearest single sign
 that you are taking on change faster than you can absorb it.
@@ -61,7 +65,10 @@ indicator gets worse. "Deployments up, rework up" means you are busier, not fast
 
 Check every window. Compare each measure with **your own trailing baseline**: the last 3 months against
 the 6 before them, by default. A move counts when it exceeds one standard deviation of the baseline and a
-minimum practical size. There are no universal thresholds, because teams differ too much.
+minimum practical size. These are starting heuristics, not validated thresholds: calibrate them against
+your history. Change size, rework and latency are skewed, so if a few outlier months dominate, use the
+median and median absolute deviation instead (`--robust`). There are no universal thresholds, because
+teams differ too much.
 
 | Rule | When | Do |
 |---|---|---|

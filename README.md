@@ -41,7 +41,15 @@ absorption-meter analyze path/to/repo --since 2025-01-01
 ```
 
 The report opens with a decision (Scale, Hold or Address), then the four pairs, a month-by-month table
-and any contract drift. Options:
+and any contract drift.
+
+Try it without a repository, on the bundled demo team:
+
+```bash
+absorption-meter analyze --input examples/demo/changes.jsonl --team-metrics examples/demo/team.csv
+```
+
+Options:
 
 | Option | Adds |
 |---|---|
@@ -50,9 +58,19 @@ and any contract drift. Options:
 | `--format json` | Machine-readable output |
 | `--fail-on-signal` | Exit status 2 on a debt signal or a Hold, for CI gates |
 | `--recent 3 --baseline 6 --k 1` | Window sizes and sensitivity of the baseline comparison |
+| `--robust` | Median and MAD baseline instead of mean and standard deviation (resists outlier months) |
+| `--input data.jsonl` | Analyze an exported dataset instead of a repository |
 
 `absorption-meter contracts path/to/repo` lists every OpenAPI or JSON Schema change that broke
-compatibility without a version bump.
+compatibility without a version bump. `absorption-meter export path/to/repo -o data.jsonl` writes a
+shareable dataset that holds no names, e-mail addresses or commit messages.
+
+## Demo data and a reproducible worked example
+
+[`examples/`](examples/) holds a synthetic demo team, where every signal fires, and a worked example on
+the public history of Homebrew/brew (July 2024 to October 2026), with the decision rules replayed month
+by month. `scripts/reproduce.sh` regenerates every committed report, table and paper figure from the
+committed datasets, with no network access; CI runs it and fails if anything changes.
 
 ### GitHub Action
 
@@ -84,7 +102,7 @@ own history, never with another team's numbers. Details are in the paper, Sectio
 ```bash
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
-python scripts/simulate_model.py paper/model.dat   # data for the paper's Figure 2
+scripts/reproduce.sh                               # regenerate all example outputs and figure data
 cd paper && tectonic main.tex                      # or pdflatex + bibtex
 ```
 

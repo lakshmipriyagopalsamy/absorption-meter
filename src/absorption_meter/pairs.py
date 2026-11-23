@@ -7,13 +7,16 @@ while its paired indicator worsens is the signature of hidden delivery debt.
 Every measure is compared with the team's *own* trailing baseline, never with a
 universal threshold: the recent window (default 3 months) against the months
 before it (default 6). A move counts if it exceeds ``k`` standard deviations of
-the baseline (default 1) and a minimum practical size.
+the baseline (default 1) and a minimum practical size. With ``robust``, the
+median and the median absolute deviation replace the mean and standard
+deviation, so one unusual month can't set the bar. These are starting
+heuristics: calibrate them against your own history.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from statistics import mean, pstdev
+from statistics import mean, median, pstdev
 from typing import Dict, List, Optional, Sequence
 
 from .metrics import Analysis, MonthStats
@@ -32,6 +35,7 @@ class Settings:
     recent: int = 3
     baseline: int = 6
     k: float = 1.0
+    robust: bool = False   # median and MAD instead of mean and standard deviation
 
 
 @dataclass
@@ -95,9 +99,14 @@ def trend(
     recent = [v for v in values[settings.baseline:] if v is not None]
     if len(base) < max(2, settings.baseline // 2) or len(recent) < max(1, settings.recent - 1):
         return Trend(NA, None, None)
-    b, r = mean(base), mean(recent)
+    if settings.robust:
+        b, r = median(base), median(recent)
+        spread = 1.4826 * median(abs(v - b) for v in base)   # MAD, scaled to match a normal SD
+    else:
+        b, r = mean(base), mean(recent)
+        spread = pstdev(base)
     minimum = abs_min if abs_min is not None else rel_min * abs(b)
-    threshold = max(settings.k * pstdev(base), minimum)
+    threshold = max(settings.k * spread, minimum)
     diff = r - b
     if threshold == 0:
         direction = UP if diff > 0 else DOWN if diff < 0 else FLAT
