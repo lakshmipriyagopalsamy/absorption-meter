@@ -1,5 +1,7 @@
 # CATS and change absorption capacity
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24521870.svg)](https://doi.org/10.5281/zenodo.24521870)
+
 **AI raised how fast your team can produce change. Did it raise how fast your system can absorb it?**
 
 Created and maintained by **Lakshmi Priya Gopalsamy** ([ORCID 0009-0002-3628-2540](https://orcid.org/0009-0002-3628-2540)).
@@ -146,7 +148,9 @@ scripts/reproduce.sh                               # regenerate all example outp
 
 ## Citing
 
-See [`CITATION.cff`](CITATION.cff). The ideas were first presented in *The AI Velocity Paradox*
+Cite the software as: Gopalsamy, L. P. *absorption-meter* (software). Zenodo.
+[doi:10.5281/zenodo.24521870](https://doi.org/10.5281/zenodo.24521870) (all versions; v0.1.1 is
+[10.5281/zenodo.24521871](https://doi.org/10.5281/zenodo.24521871)). See also [`CITATION.cff`](CITATION.cff). The ideas were first presented in *The AI Velocity Paradox*
 (October 2026) and at Raptors Conference 2026. An accompanying article is in preparation.
 
 ## License
