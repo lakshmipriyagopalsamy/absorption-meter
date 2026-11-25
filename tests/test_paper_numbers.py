@@ -1,6 +1,7 @@
-"""Every Homebrew number and verdict quoted in the paper's worked example (Section VII) must follow from
-the committed outputs, which scripts/reproduce.sh regenerates from the pinned dataset. If the data or
-the method changes, this test fails until the text is updated."""
+"""Every Homebrew number and verdict quoted in the article's worked example must follow from the committed
+outputs, which scripts/reproduce.sh regenerates from the pinned dataset. The numbers are checked always;
+the manuscript's wording is checked only where a local copy of the manuscript (paper/main.tex) exists,
+since the manuscript is not part of the public repository."""
 
 import csv
 import json
@@ -20,8 +21,11 @@ def table(*parts):
 MONTHLY = {r["month"]: r for r in table("monthly.csv")}
 REPLAY = {r["as_of"]: r for r in table("timeline.csv")}
 ROBUST = {r["as_of"]: r for r in table("robust", "timeline.csv")}
-with open(os.path.join(ROOT, "paper", "main.tex"), encoding="utf-8") as fh:
-    PAPER = re.sub(r"\s+", " ", fh.read())
+MANUSCRIPT = os.path.join(ROOT, "paper", "main.tex")
+PAPER = None
+if os.path.exists(MANUSCRIPT):
+    with open(MANUSCRIPT, encoding="utf-8") as fh:
+        PAPER = re.sub(r"\s+", " ", fh.read())
 
 BASELINE = [f"2025-0{i}" for i in range(1, 7)]
 MAY_JUL = ["2026-05", "2026-06", "2026-07"]
@@ -32,7 +36,8 @@ def col(months, name):
 
 
 def says(text):
-    assert text in PAPER, f"paper no longer says: {text!r}"
+    if PAPER is not None:
+        assert text in PAPER, f"manuscript no longer says: {text!r}"
 
 
 def test_scope():
@@ -94,7 +99,7 @@ def test_robust_baseline_holds_only_may_to_july_2026():
 
 
 def test_figure_data_matches_outputs():
-    with open(os.path.join(ROOT, "paper", "homebrew.dat")) as fh:
+    with open(os.path.join(ROOT, "figures", "homebrew.dat")) as fh:
         rows = [line.split() for line in fh.read().splitlines()[1:]]
     for _, month, p, ar, hold in rows:
         assert abs(float(p) - float(MONTHLY[month]["production"])) < 0.051

@@ -1,4 +1,4 @@
-"""Illustrative stock-and-flow model of delivery debt (paper, Figure 1).
+"""Illustrative stock-and-flow model of delivery debt (figure data).
 
 The parameters are illustrative, not fitted to data. The model shows the
 mechanism: when production outruns absorption, unabsorbed change becomes latent
@@ -64,7 +64,7 @@ def simulate(p: Params) -> List[dict]:
 
 
 def main(argv: List[str]) -> int:
-    out = argv[1] if len(argv) > 1 else "paper/model.dat"
+    out = argv[1] if len(argv) > 1 else "figures/model.dat"
     without = simulate(Params())
     with_cats = simulate(Params(a_growth=6.0))
     with open(out, "w") as fh:

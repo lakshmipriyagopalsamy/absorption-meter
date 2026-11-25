@@ -17,7 +17,10 @@ $AM analyze --input examples/homebrew/changes.jsonl --format json -o examples/ho
 $PY scripts/rule_timeline.py examples/homebrew/changes.jsonl examples/homebrew --from 2025-01
 $PY scripts/rule_timeline.py examples/homebrew/changes.jsonl examples/homebrew/robust --from 2025-01 --robust
 
-# Paper figures.
-$PY scripts/simulate_model.py paper/model.dat
+# Figure data.
+mkdir -p figures
+$PY scripts/simulate_model.py figures/model.dat
 $PY scripts/paper_data.py
+# The article manuscript is kept outside the public repository; if a local copy exists, refresh its data.
+if [ -d paper ]; then cp figures/model.dat figures/homebrew.dat paper/; fi
 echo "Done. Check with: git status --short"

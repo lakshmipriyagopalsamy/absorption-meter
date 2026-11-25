@@ -11,3 +11,4 @@ planning/
 .pytest_cache/
 *.egg-info/
 CATS/
+paper/

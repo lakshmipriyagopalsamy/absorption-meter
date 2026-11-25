@@ -2,7 +2,7 @@
 
 **AI raised how fast your team can produce change. Did it raise how fast your system can absorb it?**
 
-This repository holds an open framework, a tool and a research paper about one idea. When production
+This repository holds an open framework and a tool built around one idea. When production
 outruns absorption, the gap builds up as **delivery debt**. DORA metrics measure the pipeline, so they
 can stay green while the debt grows. Practitioners have started calling the constraint *absorption
 capacity*. This work makes it measurable, shows where the debt hides, and says what to do about it.
@@ -13,7 +13,6 @@ It can settle in the code (weak tests, coupling) or outside it (missing telemetr
 
 | | What | Where |
 |---|---|---|
-| 📄 | **Paper:** *When AI Outpaces Absorption: Measuring Delivery Debt and Repaying It with CATS* | [`paper/`](paper/) ([PDF](paper/main.pdf)) |
 | 📘 | **Playbook:** the framework in practice: the matrix, paired metrics, decision rules, a two-week start, a self-check | [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md) |
 | 🛠️ | **Tool:** `absorption-meter`, a CLI and GitHub Action that computes the paired metrics and flags contract drift | [`src/absorption_meter/`](src/absorption_meter/) |
 
@@ -73,7 +72,7 @@ shareable dataset that holds no names, e-mail addresses or commit messages.
 
 [`examples/`](examples/) holds a synthetic demo team, where every signal fires, and a worked example on
 the public history of Homebrew/brew (July 2024 to October 2026), with the decision rules replayed month
-by month. `scripts/reproduce.sh` regenerates every committed report, table and paper figure from the
+by month. `scripts/reproduce.sh` regenerates every committed report, table and figure dataset from the
 committed datasets, with no network access; CI runs it and fails if anything changes.
 
 ### GitHub Action
@@ -99,7 +98,7 @@ The report appears in the job summary.
 
 Every measure is a proxy. Rework is detected from reverts and fix-like follow-up changes to the same
 files: it misses silent fixes and can count unrelated fixes to busy files. Compare a repository with its
-own history, never with another team's numbers. Details are in the paper, Sections III and VIII.
+own history, never with another team's numbers. Operational definitions of every measure are in the [playbook](docs/PLAYBOOK.md#9-operational-definitions).
 
 ## Development
 
@@ -107,14 +106,13 @@ own history, never with another team's numbers. Details are in the paper, Sectio
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
 scripts/reproduce.sh                               # regenerate all example outputs and figure data
-cd paper && tectonic main.tex                      # or pdflatex + bibtex
 ```
 
 ## Citing
 
 See [`CITATION.cff`](CITATION.cff). The ideas were first presented in *The AI Velocity Paradox*
-(October 2026) and at Raptors Conference 2026.
+(October 2026) and at Raptors Conference 2026. An accompanying article is in preparation.
 
 ## License
 
-Code: [MIT](LICENSE). Paper and documentation (`paper/`, `docs/`): [CC BY 4.0](LICENSE-docs.md).
+Code: [MIT](LICENSE). Documentation (`docs/`): [CC BY 4.0](LICENSE-docs.md).

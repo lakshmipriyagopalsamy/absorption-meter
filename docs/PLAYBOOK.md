@@ -3,7 +3,7 @@
 A practical guide for engineering teams using AI to write code. It explains the framework, how to measure
 it with or without the `absorption-meter` tool, and what to do when a signal fires.
 
-The research paper behind it is [`paper/main.pdf`](../paper/main.pdf).
+An accompanying research article is in preparation.
 
 ## 1. The idea in one paragraph
 
