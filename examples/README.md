@@ -47,7 +47,7 @@ to commit `3e47189a707c739ee1278a28a3b845f5834574e6`.
 **What it shows.** GitHub Copilot instructions were added on 24 July 2025. The replay returns **Hold** in
 August 2025, the first month after, with rework and change cost rising; returns to **Scale** from
 November 2025 to January 2026; flags change cost from March 2026; and returns **Hold** from May to July
-2026, as size-weighted production roughly tripled while the absorption ratio fell from about 0.8 to
+2026, as size-weighted production roughly tripled while the absorption ratio (AR_repo) fell from about 0.8 to
 0.5–0.7.
 
 **What it doesn't show.** This is one project and an illustration of the method, not evidence that AI

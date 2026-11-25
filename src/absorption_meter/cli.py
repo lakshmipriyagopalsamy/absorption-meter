@@ -21,6 +21,9 @@ def _common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--since", help="only changes after this date, e.g. 2024-01-01")
     p.add_argument("--until", help="only changes before this date")
     p.add_argument("--include-bots", action="store_true", help="keep dependency-bot changes")
+    p.add_argument("--as-of", help="analysis date, YYYY-MM-DD: changes whose rework window has not closed "
+                   "by then are left out (default: today, or --until if given; for a dataset, the date it "
+                   "was read)")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -75,13 +78,30 @@ def _write(text: str, output: Optional[str]) -> None:
             fh.write(text)
 
 
-def _within(ts: int, since: Optional[str], until: Optional[str]) -> bool:
+def _stamp(day: str) -> int:
     from datetime import datetime, timezone
 
-    def stamp(day: str) -> int:
-        return int(datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
+    return int(datetime.strptime(day, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
 
-    return (not since or ts >= stamp(since)) and (not until or ts < stamp(until))
+
+def _within(ts: int, since: Optional[str], until: Optional[str]) -> bool:
+    return (not since or ts >= _stamp(since)) and (not until or ts < _stamp(until))
+
+
+def _as_of(args, dataset_meta: Optional[dict] = None) -> Optional[int]:
+    """The analysis date: --as-of, else --until, else the dataset's read date, else now (live repository).
+
+    Older datasets that record no read date fall back to the newest change (None), which is conservative.
+    """
+    if getattr(args, "as_of", None):
+        return _stamp(args.as_of)
+    if args.until:
+        return _stamp(args.until)
+    if dataset_meta is not None:
+        return dataset_meta.get("as_of")
+    import time
+
+    return int(time.time())
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -94,7 +114,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         changes = [c for c in changes if _within(c.timestamp, args.since, args.until)]
         drift = [d for d in drift if _within(d.timestamp, args.since, args.until)]
         name = meta.get("source") or os.path.basename(args.input)
-        return _analyze(args, name, changes, tags, drift)
+        return _analyze(args, name, changes, tags, drift, _as_of(args, meta))
 
     repo = os.path.abspath(args.path)
     name = os.path.basename(repo.rstrip(os.sep))
@@ -108,7 +128,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         drift = [] if args.no_contracts else scan_drift(repo, changes)
         commit = _git(repo, ["rev-parse", args.branch]).strip()
-        save(args.output, changes, read_tags(repo), drift, args.source or name, commit)
+        save(args.output, changes, read_tags(repo), drift, args.source or name, commit, _as_of(args))
         print(f"wrote {len(changes)} changes and {len(drift)} drift events to {args.output} (commit {commit[:12]})")
         return 0
 
@@ -124,11 +144,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     drift = [] if args.no_contracts else scan_drift(repo, changes)
-    return _analyze(args, name, changes, read_tags(repo), drift)
+    return _analyze(args, name, changes, read_tags(repo), drift, _as_of(args))
 
 
-def _analyze(args, name, changes, tags, drift) -> int:
-    analysis = monthly(changes, tags, drift, args.rework_window)
+def _analyze(args, name, changes, tags, drift, as_of: Optional[int] = None) -> int:
+    analysis = monthly(changes, tags, drift, args.rework_window, as_of=as_of)
     if not args.keep_current_month:
         analysis = drop_incomplete_last_month(analysis)
     if args.github:

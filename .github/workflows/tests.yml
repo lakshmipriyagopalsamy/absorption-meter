@@ -2,11 +2,14 @@ name: tests
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.13"]   # 3.9 (still supported locally) is no longer on GitHub's runners
+        include:
+          - { python-version: "3.9", os: ubuntu-22.04 }    # oldest supported; not on the newest runner image
+          - { python-version: "3.12", os: ubuntu-latest }
+          - { python-version: "3.13", os: ubuntu-latest }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,3 +29,14 @@ jobs:
         run: scripts/reproduce.sh
       - name: Fail if anything changed
         run: git diff --exit-code
+  action:
+    # Run the published GitHub Action against this repository, as a user's workflow would.
+    runs-on: ubuntu-latest
+    permissions: { contents: read, pull-requests: read }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: ./
+        with: { github-prs: "true", max-prs: "50" }
+      - name: Report was written
+        run: test -s absorption-report.md && head -5 absorption-report.md

@@ -65,7 +65,7 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
 
     out.append("## Month by month")
     out.append("")
-    cols = [("month", "Month"), ("changes", "Changes"), ("absorption_ratio", "AR"), ("rework_rate", "Rework"),
+    cols = [("month", "Month"), ("changes", "Changes"), ("absorption_ratio", "AR_repo"), ("rework_rate", "Rework"),
             ("untested_share", "Untested"),
             ("median_lines", "Median lines"), ("mean_dirs", "Areas/change"), ("revert_rate", "Reverts"),
             ("releases", "Releases"), ("recovery_hours", "Recovery h"), ("contract_drift", "Drift")]
@@ -96,8 +96,9 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
 
     out.append("## Reading this report")
     out.append("")
-    out.append("AR (absorption ratio) is the size-weighted share of changes not reworked within the window. "
-               "Every measure is a proxy. Rework counts reverts and fix-like follow-ups to the same files; it "
+    out.append("AR_repo is the repository proxy for the absorption ratio: the size-weighted share of changes not "
+               "reworked within the window. The full model's AR also requires a first-run CI pass, which version "
+               "control does not record, so this tool reports AR_repo. Every measure is a proxy. Rework counts reverts and fix-like follow-ups to the same files; it "
                "misses silent fixes and can count unrelated fixes to busy files, so read trends, not levels: each "
                "measure is compared with this repository's own trailing baseline. The most recent "
                f"{analysis.rework_window_days} days are left out of rework because their window hasn't closed.")
@@ -111,6 +112,8 @@ def to_json(name: str, analysis: Analysis, pairs: List[PairResult], rec: Recomme
         "tool": "absorption-meter",
         "version": __version__,
         "repository": name,
+        # absorption_ratio below is AR_repo: the repository proxy, without the first-run CI term of the full AR.
+        "absorption_ratio_kind": "AR_repo",
         "analysis": asdict(analysis),
         "decision": asdict(rec),
         "pairs": [asdict(p) for p in pairs],

@@ -282,7 +282,7 @@ def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recomm
     if production.direction == UP and ar.direction == DOWN:
         rec.verdict = HOLD
         rec.rules.append("R1")
-        rec.reading = ("Production is rising while the absorption ratio falls: pause expansion and use the "
+        rec.reading = ("Production is rising while the absorption ratio (AR_repo) falls: pause expansion and use the "
                        "diagnostic matrix to identify the control requiring investment.")
     elif any(fired.values()):
         rec.verdict = ADDRESS
@@ -290,7 +290,7 @@ def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recomm
     else:
         rec.verdict = SCALE
         rec.rules.append("R0")
-        rec.reading = ("Absorption ratio is steady or rising and no indicator has fired: conditions support "
+        rec.reading = ("The absorption ratio (AR_repo) is steady or rising and no indicator has fired: conditions support "
                        "cautiously expanding AI-assisted delivery while monitoring the paired indicators. "
                        "A steady ratio is not proof of safety.")
 

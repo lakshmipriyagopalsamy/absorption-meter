@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this framework or tool, please cite it as below."
 title: "CATS and change absorption capacity: absorption-meter"
 type: software
-version: 0.1.0
-date-released: 2026-11-22
+version: 0.1.1
+date-released: 2026-11-25
 license: MIT
 repository-code: "https://github.com/lakshmipriyagopalsamy/absorption-meter"
 url: "https://github.com/lakshmipriyagopalsamy/absorption-meter"

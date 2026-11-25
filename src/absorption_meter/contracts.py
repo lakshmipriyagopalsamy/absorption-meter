@@ -12,6 +12,12 @@ What counts as breaking:
 * removed response property, or a response property that is no longer required;
 * a changed type;
 * an enum value removed from a request.
+
+Scope: this is partial OpenAPI and JSON Schema compatibility analysis, not comprehensive contract
+validation. Not covered: external ``$ref`` targets (other files or URLs are not followed; the referenced
+part is skipped), constraint changes such as ``minLength``, ``pattern`` or ``format``, ``oneOf`` / ``anyOf``
+/ ``allOf`` composition, parameter style and serialization, security schemes, and other formats such as
+AsyncAPI, protobuf and GraphQL.
 """
 
 from __future__ import annotations
@@ -27,7 +33,7 @@ from .gitlog import Change, show_file
 
 HTTP_METHODS = ("get", "put", "post", "delete", "patch", "head", "options", "trace")
 
-_NAME_HINT = re.compile(r"(openapi|swagger|asyncapi)[^/]*\.(ya?ml|json)$|\.schema\.json$", re.IGNORECASE)
+_NAME_HINT = re.compile(r"(openapi|swagger)[^/]*\.(ya?ml|json)$|\.schema\.json$", re.IGNORECASE)
 _MAX_DEPTH = 8
 
 
@@ -116,7 +122,7 @@ def _resolve(schema: Any, root: Dict[str, Any], seen: Optional[set] = None) -> A
     seen = seen or set()
     while isinstance(schema, dict) and isinstance(schema.get("$ref"), str):
         ref = schema["$ref"]
-        if not ref.startswith("#/") or ref in seen:
+        if not ref.startswith("#/") or ref in seen:   # external or circular reference: not followed
             return {}
         seen.add(ref)
         node: Any = root

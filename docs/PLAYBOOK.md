@@ -28,7 +28,7 @@ Measure over a rolling window, monthly by default:
 |---|---|---|
 | **P** | Production | Changes merged, weighted by size. `absorption-meter` uses log(1 + lines changed), so one huge change can't dominate |
 | **A** | Absorption | The part of P that was absorbed safely: not reverted, hotfixed or reworked within *W* days (default 14) |
-| **AR** | Absorption ratio | A / P, between 0 and 1 |
+| **AR** | Absorption ratio | A / P, between 0 and 1. Without first-run CI data, the tool reports the repository proxy **AR_repo** (no verification term) |
 
 Accumulated delivery debt is the running total of change taken in but not absorbed: **D = Σ (P − A)**.
 It records cumulative unabsorbed change and never decreases. Track remediation separately: work that
@@ -106,8 +106,8 @@ pip install git+https://github.com/lakshmipriyagopalsamy/absorption-meter
 absorption-meter analyze path/to/repo --since 2025-01-01
 ```
 
-The tool reads mainline history and gives you P, A and AR by month, rework, change cost, revert and
-patch-release rates, and contract drift for OpenAPI and JSON Schema files. Add:
+The tool reads mainline history and gives you P, A and AR_repo by month, rework, change cost, revert and
+patch-release rates, and contract drift for OpenAPI and JSON Schema files (a partial compatibility check; see the README's scope section). Add:
 
 - `--github OWNER/REPO` for lead time, decision latency and review depth from pull requests (set
   `GITHUB_TOKEN`);
@@ -121,7 +121,7 @@ As a GitHub Action, with `fetch-depth: 0` so the whole history is available:
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }
-- uses: lakshmipriyagopalsamy/absorption-meter@v0.1.0
+- uses: lakshmipriyagopalsamy/absorption-meter@v0.1.1
   with: { github-prs: "true" }
 ```
 
@@ -210,14 +210,14 @@ Exactly what `absorption-meter` computes. Defaults are in brackets; all are conf
 |---|---|---|
 | Change | One commit on the branch's first-parent history: a merge, a squash-merged PR or a direct commit. A merge counts once, diffed against its first parent. Lockfiles, vendored, built and binary files are dropped; changes left empty, and dependency-bot changes, are excluded | – |
 | Size weight *s(c)* | ln(1 + lines added + lines deleted) | – |
-| Matured change | A change whose rework window [*W* = 14 days] has fully elapsed by the analysis date (the newest change, or the replay date). Only matured changes enter P, A, AR and rework | – |
+| Matured change | A change whose rework window [*W* = 14 days] has fully elapsed by the analysis date (today by default; `--as-of` or `--until` set it, and a dataset uses the date it was read). Only matured changes enter P, A, AR and rework | – |
 | P (production) | Σ *s(c)* over the month's matured changes | size-weighted changes / month |
 | Reworked | Within *W* days of merge, a later change reverts it (`This reverts commit <sha>`), or a later change whose message matches *fix, bug, hotfix, regression, revert, rollback, broke, patch* touches at least one of the same files | yes / no |
 | Rework rate | Reworked matured changes ÷ matured changes (a count, not size-weighted). A DORA outcome, used here to corroborate | share |
 | Verification proxy (repository) | Share of the month's code changes merged without touching any test file. Test files follow common conventions (`test/`, `tests/`, `spec/`, `__tests__/`, `test_*.py`, `*_test.go`, `*.test.ts`, `*_spec.rb`, `*Test.java` …); changes touching only documentation or configuration are left out. Observable at merge; no window | share (lower is better) |
 | Verification effectiveness (team, primary) | Team-reported mutation score on critical behavior (`mutation_score`), or the share of critical requirements with automated verification (`critical_verified`), in the team CSV. Either replaces the repository proxy when present; mutation score is preferred if both are given | 0–1 (higher is better) |
 | A (absorption) | Σ *s(c)* over matured changes not reworked. The full model also requires a first-run CI pass; without CI data the tool computes the repository proxy, **AR_repo** | size-weighted changes / month |
-| AR | A ÷ P | 0–1 |
+| AR | A ÷ P. The tool reports **AR_repo**, A without the first-run CI term, because version control does not record CI results | 0–1 |
 | D (delivery debt) | Running total of P − A: change shipped but not absorbed. Records debt incurred and never decreases; remediation is tracked separately. Not a measure of technical debt in the code | size-weighted changes |
 | Contract drift | A change to an OpenAPI/Swagger or JSON Schema file that breaks compatibility while its version (`info.version`, `version` or `$id`) is unchanged. A version change that keeps the major number is also counted. *Breaking:* a removed path, operation or 2xx response; a removed response property, or one no longer required; a newly required request parameter or property; a changed type; an enum value removed from a request. Moved or deleted files are not counted | events per 100 changes / month |
 | Change cost | Median lines changed per change, and mean number of top-level directories touched per change | lines; directories |

@@ -4,7 +4,7 @@
 
 ## Decision
 
-🔴 **Hold**: Production is rising while the absorption ratio falls: pause expansion and use the diagnostic matrix to identify the control requiring investment.
+🔴 **Hold**: Production is rising while the absorption ratio (AR_repo) falls: pause expansion and use the diagnostic matrix to identify the control requiring investment.
 
 Suggested order: protect contracts and verify critical behavior first, and close telemetry gaps that block diagnosis; move simplification earlier when change cost is the dominant constraint. The order is a hypothesis, not a finding.
 
@@ -25,7 +25,7 @@ A DORA metric that improves or holds while its paired indicator worsens signals 
 
 ## Month by month
 
-| Month | Changes | AR | Rework | Untested | Median lines | Areas/change | Reverts | Releases | Recovery h | Drift | Detect h | Telemetry |
+| Month | Changes | AR_repo | Rework | Untested | Median lines | Areas/change | Reverts | Releases | Recovery h | Drift | Detect h | Telemetry |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 2024-01 | 40 | 0.95 | 0.05 | 0.33 | 32 | 1.93 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
 | 2024-02 | 45 | 0.86 | 0.13 | 0.29 | 32 | 2 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
@@ -50,6 +50,6 @@ A DORA metric that improves or holds while its paired indicator worsens signals 
 
 ## Reading this report
 
-AR (absorption ratio) is the size-weighted share of changes not reworked within the window. Every measure is a proxy. Rework counts reverts and fix-like follow-ups to the same files; it misses silent fixes and can count unrelated fixes to busy files, so read trends, not levels: each measure is compared with this repository's own trailing baseline. The most recent 14 days are left out of rework because their window hasn't closed.
+AR_repo is the repository proxy for the absorption ratio: the size-weighted share of changes not reworked within the window. The full model's AR also requires a first-run CI pass, which version control does not record, so this tool reports AR_repo. Every measure is a proxy. Rework counts reverts and fix-like follow-ups to the same files; it misses silent fixes and can count unrelated fixes to busy files, so read trends, not levels: each measure is compared with this repository's own trailing baseline. The most recent 14 days are left out of rework because their window hasn't closed.
 
-_absorption-meter 0.1.0_
+_absorption-meter 0.1.1_

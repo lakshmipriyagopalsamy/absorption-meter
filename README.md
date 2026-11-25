@@ -2,6 +2,14 @@
 
 **AI raised how fast your team can produce change. Did it raise how fast your system can absorb it?**
 
+Created and maintained by **Lakshmi Priya Gopalsamy** ([ORCID 0009-0002-3628-2540](https://orcid.org/0009-0002-3628-2540)).
+The change absorption model, the CATS framework and the measurement methodology are the author's
+research; `absorption-meter` is their reference implementation.
+
+> **Research status.** This is an independently developed research framework and reference
+> implementation. The measures are operational proxies and the decision thresholds are proposed
+> heuristics. The framework has not yet been validated empirically by independent teams.
+
 This repository holds an open framework and a tool built around one idea. When production
 outruns absorption, the gap builds up as **delivery debt**. DORA metrics measure the pipeline, so they
 can stay green while the debt grows. Practitioners have started calling the constraint *absorption
@@ -19,7 +27,8 @@ It can settle in the code (weak tests, coupling) or outside it (missing telemetr
 ## The framework in 30 seconds
 
 - **P** (production): changes merged, weighted by size. **A** (absorption): the part not reverted, hotfixed
-  or reworked within 14 days. **AR = A / P**.
+  or reworked within 14 days. **AR = A / P**. The full model also requires a first-run CI pass; git history
+  doesn't record CI, so the tool reports the repository proxy **AR_repo**.
 - Delivery debt hides in five places: **contracts, verification, observability, coupling, decisions**.
 - **CATS** raises absorption: **C**ontracts, **A**utomated verification, **T**elemetry,
   **S**implification. Human decision ownership is the governance layer beneath all four.
@@ -63,17 +72,31 @@ Options:
 | `--recent 3 --baseline 6 --k 1` | Window sizes and sensitivity of the baseline comparison |
 | `--robust` | Median and MAD baseline instead of mean and standard deviation (resists outlier months) |
 | `--input data.jsonl` | Analyze an exported dataset instead of a repository |
+| `--as-of YYYY-MM-DD` | Analysis date: changes whose 14-day window hasn't closed by then are left out of P and A (default: today, or `--until`; a dataset uses the date it was read) |
 
-`absorption-meter contracts path/to/repo` lists every OpenAPI or JSON Schema change that broke
-compatibility without a version bump. `absorption-meter export path/to/repo -o data.jsonl` writes a
+`absorption-meter contracts path/to/repo` lists OpenAPI or JSON Schema changes that broke
+compatibility without a version bump. This is a partial compatibility check, not full contract
+validation (see [Scope and limitations](#scope-and-limitations)). `absorption-meter export path/to/repo -o data.jsonl` writes a
 shareable dataset that holds no names, e-mail addresses or commit messages.
 
-## Demo data and a reproducible worked example
+## Reproducibility
 
 [`examples/`](examples/) holds a synthetic demo team, where every signal fires, and a worked example on
-the public history of Homebrew/brew (July 2024 to October 2026), with the decision rules replayed month
-by month. `scripts/reproduce.sh` regenerates every committed report, table and figure dataset from the
-committed datasets, with no network access; CI runs it and fails if anything changes.
+the public history of Homebrew/brew, with the decision rules replayed month by month.
+
+| | |
+|---|---|
+| Homebrew source | [Homebrew/brew](https://github.com/Homebrew/brew) mainline, pinned to commit `3e47189a707c739ee1278a28a3b845f5834574e6` (BSD-2-Clause) |
+| Dataset | `examples/homebrew/changes.jsonl`, made with `absorption-meter export path/to/brew --since 2024-07-01 --until 2026-11-01` (4,176 changes; no names, e-mails or messages) |
+| Window and dates | Calendar months; rework window *W* = 14 days; only changes whose window has closed by the analysis date enter P and A; baseline: last 3 months against the previous 6 |
+| Replay | `scripts/rule_timeline.py` re-runs the rules as of the end of each month using only history up to then (`timeline.csv`, `rule_timeline.md`; `robust/` uses the median/MAD baseline) |
+| Demo | `examples/demo/make_demo.py`, deterministic (seed 20260101) |
+| Regenerate everything | `scripts/reproduce.sh`, with no network access and no clones |
+| Check | `git status --short` should show no changes afterwards; CI runs the script and fails on any difference |
+| Outputs | `examples/*/report.md` and `report.json`, `examples/homebrew/{monthly,timeline}.csv`, `rule_timeline.md`, `robust/`, `figures/*.dat` |
+| Environment | Python 3.9 or later (CI: 3.9, 3.12, 3.13), PyYAML; `pip install -e .` |
+| Tests | `pytest`: includes merge counting, window boundaries, the matured-cohort replay, and checks that every worked-example number follows from the committed outputs |
+| Performance | Linear in history length: about 2 s for 100,000 changes ([benchmark](docs/BENCHMARK.md)) |
 
 ### GitHub Action
 
@@ -88,13 +111,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: lakshmipriyagopalsamy/absorption-meter@v0.1.0
+      - uses: lakshmipriyagopalsamy/absorption-meter@v0.1.1
         with: { github-prs: "true" }
 ```
 
-The report appears in the job summary.
+The report appears in the job summary. For production workflows, pin the action to the release's
+full commit SHA instead of the tag (`uses: lakshmipriyagopalsamy/absorption-meter@<sha>  # v0.1.1`).
 
-## What the measures can and can't tell you
+## Scope and limitations
+
+The tool measures what version control and optional team data can show. It does not run mutation
+tests, instrument services or judge whether a human decision was a good one.
+
+| CATS part | What `absorption-meter` does | Coverage |
+|---|---|---|
+| Contracts | Detects selected breaking changes in OpenAPI 3, Swagger 2 and JSON Schema files: removed paths, operations, 2xx responses or properties; newly required inputs; type changes; removed request enum values. External `$ref` targets, constraint changes (`pattern`, `minLength` …), `oneOf`/`anyOf`/`allOf`, AsyncAPI, protobuf and GraphQL are not analyzed | Partial |
+| Automated verification | Share of code changes merged without test changes (a proxy); accepts team-reported mutation score or critical-requirements coverage | Partial |
+| Telemetry | Accepts team-reported telemetry coverage, time to detect and recovery time | Partial (team data) |
+| Simplification | Change cost: lines and top-level modules touched per change | Proxy |
+| Ownership and decisions | Pull-request decision latency and review depth (with `--github`); decision rules R0–R6 | Partial |
+
+### What the measures can and can't tell you
 
 Every measure is a proxy. Rework is detected from reverts and fix-like follow-up changes to the same
 files: it misses silent fixes and can count unrelated fixes to busy files. Compare a repository with its

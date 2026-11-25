@@ -34,11 +34,17 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
+        AM_SINCE: ${{ inputs.since }}
+        AM_PRS: ${{ inputs.github-prs }}
+        AM_MAX_PRS: ${{ inputs.max-prs }}
+        AM_FAIL: ${{ inputs.fail-on-signal }}
+        AM_REPO: ${{ github.repository }}
       run: |
+        # Inputs arrive as environment variables, never pasted into the script, so they can't inject commands.
         args=(analyze . --output absorption-report.md)
-        [ -n "${{ inputs.since }}" ] && args+=(--since "${{ inputs.since }}")
-        [ "${{ inputs.github-prs }}" = "true" ] && args+=(--github "${{ github.repository }}" --max-prs "${{ inputs.max-prs }}")
-        [ "${{ inputs.fail-on-signal }}" = "true" ] && args+=(--fail-on-signal)
+        [ -n "$AM_SINCE" ] && args+=(--since "$AM_SINCE")
+        [ "$AM_PRS" = "true" ] && args+=(--github "$AM_REPO" --max-prs "$AM_MAX_PRS")
+        [ "$AM_FAIL" = "true" ] && args+=(--fail-on-signal)
         status=0
         absorption-meter "${args[@]}" || status=$?
         cat absorption-report.md >> "$GITHUB_STEP_SUMMARY"

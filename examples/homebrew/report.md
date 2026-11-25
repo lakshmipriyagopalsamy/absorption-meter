@@ -23,7 +23,7 @@ A DORA metric that improves or holds while its paired indicator worsens signals 
 
 ## Month by month
 
-| Month | Changes | AR | Rework | Untested | Median lines | Areas/change | Reverts | Releases | Recovery h | Drift |
+| Month | Changes | AR_repo | Rework | Untested | Median lines | Areas/change | Reverts | Releases | Recovery h | Drift |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2024-07 | 167 | 0.66 | 0.28 | 0.76 | 10 | 1.14 | 0.00 | 5 | 145 | 0 |
 | 2024-08 | 148 | 0.78 | 0.20 | 0.81 | 14 | 1.20 | 0.00 | 6 | 100 | 0 |
@@ -56,6 +56,6 @@ A DORA metric that improves or holds while its paired indicator worsens signals 
 
 ## Reading this report
 
-AR (absorption ratio) is the size-weighted share of changes not reworked within the window. Every measure is a proxy. Rework counts reverts and fix-like follow-ups to the same files; it misses silent fixes and can count unrelated fixes to busy files, so read trends, not levels: each measure is compared with this repository's own trailing baseline. The most recent 14 days are left out of rework because their window hasn't closed.
+AR_repo is the repository proxy for the absorption ratio: the size-weighted share of changes not reworked within the window. The full model's AR also requires a first-run CI pass, which version control does not record, so this tool reports AR_repo. Every measure is a proxy. Rework counts reverts and fix-like follow-ups to the same files; it misses silent fixes and can count unrelated fixes to busy files, so read trends, not levels: each measure is compared with this repository's own trailing baseline. The most recent 14 days are left out of rework because their window hasn't closed.
 
-_absorption-meter 0.1.0_
+_absorption-meter 0.1.1_

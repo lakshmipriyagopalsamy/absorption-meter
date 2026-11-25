@@ -35,6 +35,15 @@ class Repo:
         self._git("commit", "-q", "--allow-empty", "-m", message, env=env)
         return self._git("rev-parse", "HEAD").strip()
 
+    def checkout(self, branch, create=False):
+        self._git("checkout", "-q", *(["-b"] if create else []), branch)
+
+    def merge(self, branch, message, when):
+        stamp = when.strftime("%Y-%m-%dT%H:%M:%S+0000")
+        self._git("merge", "-q", "--no-ff", "-m", message, branch,
+                  env={"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp})
+        return self._git("rev-parse", "HEAD").strip()
+
     def tag(self, name, when):
         stamp = when.strftime("%Y-%m-%dT%H:%M:%S+0000")
         self._git("tag", "-a", name, "-m", name, env={"GIT_COMMITTER_DATE": stamp})

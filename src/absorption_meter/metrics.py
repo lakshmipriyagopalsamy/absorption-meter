@@ -116,24 +116,38 @@ def rework_flags(changes: Sequence[Change], window_days: int = 14) -> Dict[str, 
     that looks like a fix touches at least one of the same files. This is an
     SZZ-style approximation: it misses fixes with uninformative messages and can
     count unrelated fixes to a busy file.
+
+    Each fix or revert looks back through a per-file (and per-commit-prefix) index
+    of the changes in its window, so the cost grows with the number of fixes and
+    the files they touch rather than with every pair of changes.
     """
     ordered = sorted(changes, key=lambda c: c.timestamp)
-    flags: Dict[str, bool] = {}
     window = window_days * DAY
-    for i, change in enumerate(ordered):
-        reworked = False
-        for later in ordered[i + 1:]:
-            if later.timestamp - change.timestamp > window:
-                break
-            reverted = later.reverted_sha
-            if reverted and (change.sha.startswith(reverted) or reverted.startswith(change.sha[:7])):
-                reworked = True
-                break
-            if FIX_PATTERN.search(later.subject) and _shares_path(change, later):
-                reworked = True
-                break
-        flags[change.sha] = reworked
-    return flags
+    flagged = [False] * len(ordered)
+    by_path: Dict[str, List[int]] = {}      # path -> indices of earlier changes touching it
+    by_prefix: Dict[str, List[int]] = {}    # first 7 hex digits of a sha -> indices
+    for j, later in enumerate(ordered):
+        cutoff = later.timestamp - window
+        target = later.reverted_sha
+        if target:
+            for i in by_prefix.get(target[:7], ()):
+                if ordered[i].timestamp >= cutoff:
+                    flagged[i] = True
+        if FIX_PATTERN.search(later.subject):
+            for path in set(later.paths):
+                hits = by_path.get(path)
+                if not hits:
+                    continue
+                k = len(hits)
+                while k and ordered[hits[k - 1]].timestamp >= cutoff:
+                    k -= 1
+                for i in hits[k:]:
+                    flagged[i] = True
+                del hits[:k]                  # older entries can never fall inside a later window
+        for path in set(later.paths):
+            by_path.setdefault(path, []).append(j)
+        by_prefix.setdefault(later.sha[:7], []).append(j)
+    return {c.sha: flagged[i] for i, c in enumerate(ordered)}
 
 
 def release_failures(tags: Sequence[Tuple[int, str]], window_days: int = 7) -> List[Tuple[int, bool, Optional[float]]]:
@@ -183,8 +197,9 @@ def monthly(
 ) -> Analysis:
     """Aggregate changes into a contiguous month-by-month table.
 
-    A change enters P and A only once its rework window has fully elapsed by ``as_of`` (default: the
-    newest change's time). Pass the replay date as ``as_of`` to see what a team would have known then.
+    A change enters P and A only once its rework window has fully elapsed by ``as_of``, the analysis
+    date. Pass the replay date to see what a team would have known then. Without ``as_of`` the newest
+    change's time is used, which is conservative; the CLI passes the actual analysis date instead.
     """
     if not changes:
         return Analysis([], 0, None, None, rework_window_days, False, list(drift_events))
@@ -194,6 +209,10 @@ def monthly(
     # Changes too recent for their rework window to have closed are right-censored.
     censor_after = last_ts - rework_window_days * DAY
     reverted = {c.reverted_sha for c in changes if c.reverted_sha}
+    lengths = sorted({len(r) for r in reverted})
+
+    def was_reverted(c: Change) -> bool:   # some revert names a prefix of this sha
+        return any(c.sha[:n] in reverted for n in lengths)
 
     first_m, last_m = changes[0].month, changes[-1].month
     by_month: Dict[str, List[Change]] = {m: [] for m in _month_range(first_m, last_m)}
@@ -217,7 +236,7 @@ def monthly(
             if observable:
                 row.rework_rate = round(sum(flags[c.sha] for c in observable) / len(observable), 4)
                 row.revert_rate = round(
-                    sum(any(c.sha.startswith(r) for r in reverted) for c in observable) / len(observable), 4
+                    sum(was_reverted(c) for c in observable) / len(observable), 4
                 )
                 row.production = round(sum(size_weight(c) for c in observable), 3)
                 row.absorbed = round(sum(size_weight(c) for c in observable if not flags[c.sha]), 3)

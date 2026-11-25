@@ -48,9 +48,12 @@ def write_dataset(
     drift_events: Sequence[DriftEvent] = (),
     source: str = "",
     commit: str = "",
+    as_of: Optional[int] = None,
 ) -> None:
     meta = {"type": "meta", "format": FORMAT, "tool": f"absorption-meter {__version__}",
             "source": source, "commit": commit, "tags": [[ts, name] for ts, name in tags]}
+    if as_of is not None:
+        meta["as_of"] = as_of   # the date the history was read: the default analysis date for this dataset
     out.write(json.dumps(meta, separators=(",", ":")) + "\n")
     for c in changes:
         out.write(json.dumps(_change_record(c), separators=(",", ":")) + "\n")
@@ -97,6 +100,7 @@ def load(path: str):
         return read_dataset(fh)
 
 
-def save(path: str, changes, tags=(), drift_events=(), source: str = "", commit: str = "") -> None:
+def save(path: str, changes, tags=(), drift_events=(), source: str = "", commit: str = "",
+         as_of: Optional[int] = None) -> None:
     with open(path, "w", encoding="utf-8") as fh:
-        write_dataset(fh, changes, tags, drift_events, source, commit)
+        write_dataset(fh, changes, tags, drift_events, source, commit, as_of)

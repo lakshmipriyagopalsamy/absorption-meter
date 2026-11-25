@@ -113,3 +113,16 @@ def test_scan_drift_over_history(repo):
     assert [(e.sha, e.kind) for e in events] == [
         (drift_sha, "drift"), (minor_sha, "minor-bump"), (events[2].sha, "signalled")]
     assert [e.is_drift for e in events] == [True, True, False]
+
+
+def test_external_refs_and_invalid_documents_are_skipped_not_fatal():
+    from absorption_meter.contracts import is_candidate_path
+
+    ext = {"openapi": "3.0.0", "info": {"version": "1"}, "paths": {"/a": {"get": {"responses": {"200": {
+        "content": {"application/json": {"schema": {"$ref": "common.yaml#/Thing"}}}}}}}}}
+    changed = copy.deepcopy(ext)
+    changed["paths"]["/a"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"] = "other.yaml#/X"
+    assert diff_openapi(ext, changed) == []          # external targets are not followed (documented limitation)
+    assert diff_documents(None, ext) == [] and diff_documents({"not": "a contract"}, {"x": 1}) == []
+    assert not is_candidate_path("api/asyncapi.yaml")  # AsyncAPI is out of scope
+    assert is_candidate_path("api/openapi.yaml") and is_candidate_path("events/order.schema.json")
