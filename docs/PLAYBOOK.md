@@ -101,9 +101,22 @@ been tested yet; tell us if your experience differs.
 
 ### With `absorption-meter`
 
+Requires Python 3.9 or later.
+
 ```bash
 pip install git+https://github.com/lakshmipriyagopalsamy/absorption-meter
 absorption-meter analyze path/to/repo --since 2025-01-01
+```
+
+The tool reads only the git history on your machine; nothing is uploaded. It needs **at least nine
+months of history** (a six-month baseline plus a three-month recent window); with less, the report says
+*Not enough history*.
+
+To see a full report before using your own data, clone the repository and run it on the synthetic demo
+team, where every signal fires:
+
+```bash
+absorption-meter analyze --input examples/demo/changes.jsonl --team-metrics examples/demo/team.csv
 ```
 
 The tool reads mainline history and gives you P, A and AR_repo by month, rework, change cost, revert and
@@ -124,6 +137,46 @@ As a GitHub Action, with `fetch-depth: 0` so the whole history is available:
 - uses: lakshmipriyagopalsamy/absorption-meter@v0.1.1
   with: { github-prs: "true" }
 ```
+
+### Using the tool on your team
+
+**Who and how often.** An engineering manager or platform lead runs it on one repository, once a month,
+and reviews the result with the team. Compare each repository only with its own history, never with
+another team's numbers.
+
+**Reading the report**, top to bottom:
+
+1. **Decision.** 🟢 *Scale cautiously* (R0): absorption is holding and no indicator has moved.
+   🔴 *Hold* (R1): production is rising while AR_repo falls, so pause expanding AI use. 🟡 *Address*:
+   an indicator has moved; the rule that fired (R2–R6) names the CATS control to strengthen first.
+   ⚪ *Not enough history*: fewer than nine months.
+2. **Paired metrics.** Each DORA metric beside its earlier signal. ⚠️ *debt signal* means the DORA metric
+   held or improved while its indicator worsened.
+3. **Month by month.** Changes, AR_repo, rework, untested share, change size and modules touched. Read
+   the trend, not a single month.
+4. **Contract drift.** Schema changes that broke compatibility without a version bump, with what broke.
+
+**Acting on it.** Pick the one control the rules point to, set a target for its indicator, name an
+owner, and run the tool again next month (section 7 has the 30-day path).
+
+**Other useful options.**
+
+| Option | Use |
+|---|---|
+| `--format json -o report.json` | Feed a dashboard or keep a monthly record |
+| `--as-of YYYY-MM-DD` | Analysis date. Changes whose 14-day window hasn't closed by then are left out (default: today) |
+| `--robust` | Median-based baseline, steadier when one unusual month would skew the comparison |
+
+**Sharing results without sharing code.** `export` writes a dataset with change sizes, file paths, fix
+and revert markers and release tags, and **no names, e-mail addresses, commit messages or code**:
+
+```bash
+absorption-meter export path/to/repo -o our-team.jsonl
+absorption-meter analyze --input our-team.jsonl      # anyone can reproduce the report from it
+```
+
+Use it to share a history with a researcher or another team. File paths are included, so check them
+before sharing outside your company. Or share only the report.
 
 ### Without the tool
 
