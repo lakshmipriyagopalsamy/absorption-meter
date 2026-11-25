@@ -6,9 +6,8 @@ Created and maintained by **Lakshmi Priya Gopalsamy** ([ORCID 0009-0002-3628-254
 The change absorption model, the CATS framework and the measurement methodology are the author's
 research; `absorption-meter` is their reference implementation.
 
-> **Research status.** This is an independently developed research framework and reference
-> implementation. The measures are operational proxies and the decision thresholds are proposed
-> heuristics. The framework has not yet been validated empirically by independent teams.
+> **Status.** A research framework with a reference implementation. The measures are practical
+> proxies, and the decision thresholds are starting points to tune to your team's own history.
 
 This repository holds an open framework and a tool built around one idea. When production
 outruns absorption, the gap builds up as **delivery debt**. DORA metrics measure the pipeline, so they
