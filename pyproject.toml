@@ -21,6 +21,9 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pytest>=7"]
 
+[project.urls]
+Repository = "https://github.com/lakshmipriyagopalsamy/absorption-meter"
+
 [project.scripts]
 absorption-meter = "absorption_meter.cli:main"
 

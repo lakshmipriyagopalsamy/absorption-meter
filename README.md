@@ -40,7 +40,7 @@ It can settle in the code (weak tests, coupling) or outside it (missing telemetr
 ## Quick start
 
 ```bash
-pip install git+https://github.com/<owner>/<repo>
+pip install git+https://github.com/lakshmipriyagopalsamy/absorption-meter
 absorption-meter analyze path/to/repo --since 2025-01-01
 ```
 
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: <owner>/<repo>@v0.1.0
+      - uses: lakshmipriyagopalsamy/absorption-meter@v0.1.0
         with: { github-prs: "true" }
 ```
 

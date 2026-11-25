@@ -102,7 +102,7 @@ been tested yet; tell us if your experience differs.
 ### With `absorption-meter`
 
 ```bash
-pip install absorption-meter        # or: pip install git+https://github.com/<owner>/<repo>
+pip install git+https://github.com/lakshmipriyagopalsamy/absorption-meter
 absorption-meter analyze path/to/repo --since 2025-01-01
 ```
 
@@ -121,7 +121,7 @@ As a GitHub Action, with `fetch-depth: 0` so the whole history is available:
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }
-- uses: <owner>/<repo>@v0.1.0
+- uses: lakshmipriyagopalsamy/absorption-meter@v0.1.0
   with: { github-prs: "true" }
 ```
 

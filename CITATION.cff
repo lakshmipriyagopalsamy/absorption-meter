@@ -5,6 +5,8 @@ type: software
 version: 0.1.0
 date-released: 2026-11-22
 license: MIT
+repository-code: "https://github.com/lakshmipriyagopalsamy/absorption-meter"
+url: "https://github.com/lakshmipriyagopalsamy/absorption-meter"
 authors:
   - family-names: Gopalsamy
     given-names: Lakshmi Priya
