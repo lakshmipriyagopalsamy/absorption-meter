@@ -95,12 +95,24 @@ def read_dataset(lines: Iterable[str]) -> Tuple[dict, List[Change], List[Tuple[i
     return meta, changes, tags, drift
 
 
+def _open(path: str, mode: str):
+    """Open a dataset file; paths ending in .gz are gzip-compressed (written reproducibly, with no timestamp)."""
+    if path.endswith(".gz"):
+        import gzip
+        import io
+
+        if "w" in mode:
+            return io.TextIOWrapper(gzip.GzipFile(path, "wb", mtime=0), encoding="utf-8")
+        return gzip.open(path, "rt", encoding="utf-8")
+    return open(path, mode.replace("t", ""), encoding="utf-8")
+
+
 def load(path: str):
-    with open(path, encoding="utf-8") as fh:
+    with _open(path, "rt") as fh:
         return read_dataset(fh)
 
 
 def save(path: str, changes, tags=(), drift_events=(), source: str = "", commit: str = "",
          as_of: Optional[int] = None) -> None:
-    with open(path, "w", encoding="utf-8") as fh:
+    with _open(path, "wt") as fh:
         write_dataset(fh, changes, tags, drift_events, source, commit, as_of)

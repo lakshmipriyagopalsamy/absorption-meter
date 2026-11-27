@@ -1,0 +1,18 @@
+{
+ "repository": "https://github.com/denoland/deno",
+ "commit": "ddbb5004864cc62016cf9bca4affdedf9267729f",
+ "window": [
+  "2024-07-01",
+  "2026-11-01"
+ ],
+ "ai_instruction_files_first_added": {
+  "CLAUDE.md": "2025-11-06",
+  ".github/copilot-instructions.md": "2026-03-05"
+ },
+ "adoption_marker": "2025-11-06",
+ "mainline_commits_before_marker": 2827,
+ "mainline_commits_after_marker": 2914,
+ "ai_signed_share_before": 0.0004,
+ "ai_signed_share_after": 0.1476,
+ "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
+}

@@ -1,0 +1,17 @@
+{
+ "repository": "https://github.com/prefecthq/prefect",
+ "commit": "5f7d879aa1636e42ca6697548c5c0065dafbff7a",
+ "window": [
+  "2024-07-01",
+  "2026-11-01"
+ ],
+ "ai_instruction_files_first_added": {
+  "AGENTS.md": "2025-06-16"
+ },
+ "adoption_marker": "2025-06-16",
+ "mainline_commits_before_marker": 2006,
+ "mainline_commits_after_marker": 3182,
+ "ai_signed_share_before": 0.009,
+ "ai_signed_share_after": 0.5346,
+ "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
+}

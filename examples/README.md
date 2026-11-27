@@ -28,6 +28,14 @@ absorption-meter analyze --input examples/demo/changes.jsonl --team-metrics exam
 
 Files: `make_demo.py` (deterministic generator), `changes.jsonl`, `team.csv`, `report.md`, `report.json`.
 
+## `field-tests/`: ten public projects before and after AI adoption
+
+The same replay on eight public projects that adopted AI tooling (zed, excalidraw, prefect, sentry-python,
+langchain, biome, deno, ruff) and two with no AI marker (fastapi, poetry). Change size grew after adoption
+in seven of the eight. The tests also exposed a limitation: in busy repositories, hub files make rework
+detection over-count, so AR_repo levels are not comparable across projects. See
+[`field-tests/README.md`](field-tests/README.md) and [`field-tests/summary.md`](field-tests/summary.md).
+
 ## `unexamined/`: absorbed or unexamined?
 
 A small fictional team adopts AI assistance in January 2025. Output nearly doubles and short-term rework

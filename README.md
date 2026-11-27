@@ -84,8 +84,12 @@ shareable dataset that holds no names, e-mail addresses or commit messages.
 
 ## Reproducibility
 
-[`examples/`](examples/) holds a synthetic demo team, where every signal fires, and a worked example on
-the public history of Homebrew/brew, with the decision rules replayed month by month.
+[`examples/`](examples/) holds:
+- a synthetic demo team, where every signal fires;
+- an "absorbed or unexamined?" demo;
+- a worked example on the public history of Homebrew/brew, with the decision rules replayed month by month;
+- [field tests on ten more public projects](examples/field-tests/README.md), eight of which adopted AI
+  tooling.
 
 | | |
 |---|---|

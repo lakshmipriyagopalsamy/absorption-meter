@@ -1,0 +1,20 @@
+{
+ "repository": "https://github.com/zed-industries/zed",
+ "commit": "da3a2740330a76c4c5985a4e34186962b5486db4",
+ "window": [
+  "2024-07-01",
+  "2026-11-01"
+ ],
+ "ai_instruction_files_first_added": {
+  "AGENTS.md": "2026-01-19",
+  "CLAUDE.md": "2025-04-17",
+  ".cursorrules": "2025-04-17",
+  "GEMINI.md": "2025-10-02"
+ },
+ "adoption_marker": "2025-04-17",
+ "mainline_commits_before_marker": 6615,
+ "mainline_commits_after_marker": 13534,
+ "ai_signed_share_before": 0.0005,
+ "ai_signed_share_after": 0.0163,
+ "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
+}

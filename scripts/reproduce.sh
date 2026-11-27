@@ -24,6 +24,15 @@ $AM analyze --input examples/homebrew/changes.jsonl --format json -o examples/ho
 $PY scripts/rule_timeline.py examples/homebrew/changes.jsonl examples/homebrew --from 2025-01
 $PY scripts/rule_timeline.py examples/homebrew/changes.jsonl examples/homebrew/robust --from 2025-01 --robust
 
+# Field tests: public projects before and after AI adoption (datasets pinned to a commit).
+for d in examples/field-tests/*/; do
+  [ -f "$d/changes.jsonl.gz" ] || continue
+  $AM analyze --input "$d/changes.jsonl.gz" -o "$d/report.md"
+  $AM analyze --input "$d/changes.jsonl.gz" --format json -o "$d/report.json"
+  $PY scripts/rule_timeline.py "$d/changes.jsonl.gz" "$d" --from 2025-01 >/dev/null
+done
+if ls examples/field-tests/*/markers.json >/dev/null 2>&1; then $PY scripts/field_summary.py; fi
+
 # Figure data.
 mkdir -p figures
 $PY scripts/simulate_model.py figures/model.dat

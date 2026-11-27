@@ -1,0 +1,23 @@
+as_of,verdict,rules,pairs_signalling_debt
+2025-01,insufficient-data,–,–
+2025-02,insufficient-data,–,–
+2025-03,address,R2,–
+2025-04,address,R2,–
+2025-05,address,R2,Change failure rate
+2025-06,address,R2,Change failure rate
+2025-07,scale,R0,–
+2025-08,scale,R0,–
+2025-09,address,R4 R5,–
+2025-10,address,R4,–
+2025-11,scale,R0,–
+2025-12,scale,R0,–
+2026-01,scale,R0,–
+2026-02,address,R5,Lead time
+2026-03,address,R2 R5,Lead time; Change failure rate
+2026-04,address,R2 R5,Lead time; Change failure rate
+2026-05,address,R2 R4,Change failure rate
+2026-06,scale,R0,–
+2026-07,scale,R0,–
+2026-08,scale,R0,–
+2026-09,scale,R0,–
+2026-10,scale,R0,–

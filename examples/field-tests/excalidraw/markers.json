@@ -1,0 +1,19 @@
+{
+ "repository": "https://github.com/excalidraw/excalidraw",
+ "commit": "f4e5226a3d84d51758e5967c23674f3671c11ea5",
+ "window": [
+  "2024-07-01",
+  "2026-11-01"
+ ],
+ "ai_instruction_files_first_added": {
+  "AGENTS.md": "2026-08-26",
+  "CLAUDE.md": "2025-05-25",
+  ".github/copilot-instructions.md": "2025-05-25"
+ },
+ "adoption_marker": "2025-05-25",
+ "mainline_commits_before_marker": 284,
+ "mainline_commits_after_marker": 388,
+ "ai_signed_share_before": 0.0,
+ "ai_signed_share_after": 0.0361,
+ "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
+}

@@ -1,0 +1,18 @@
+{
+ "repository": "https://github.com/biomejs/biome",
+ "commit": "f50b26295e4e828c54a1376e4c0dd338a7bde43a",
+ "window": [
+  "2024-07-01",
+  "2026-11-01"
+ ],
+ "ai_instruction_files_first_added": {
+  "AGENTS.md": "2025-11-03",
+  "CLAUDE.md": "2025-07-31"
+ },
+ "adoption_marker": "2025-07-31",
+ "mainline_commits_before_marker": 1815,
+ "mainline_commits_after_marker": 2767,
+ "ai_signed_share_before": 0.0,
+ "ai_signed_share_after": 0.0423,
+ "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
+}

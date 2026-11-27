@@ -115,3 +115,16 @@ def test_unexamined_demo_ar_alone_says_scale_but_review_and_defect_data_say_addr
     assert any("unexamined" in c for c in f["cautions"]) and any("Escaped defects" in c for c in f["cautions"])
     with open(os.path.join(U, "report_ar_only.md"), encoding="utf-8") as fh:
         assert "Scale cautiously" in fh.read()
+
+
+def test_gzip_dataset_round_trip(tmp_path):
+    from absorption_meter.dataset import load, save
+
+    meta, changes, tags, drift = load(os.path.join(EX, "demo", "changes.jsonl"))
+    gz = tmp_path / "d.jsonl.gz"
+    save(str(gz), changes, tags, drift, meta["source"], meta["commit"])
+    first = gz.read_bytes()
+    save(str(gz), changes, tags, drift, meta["source"], meta["commit"])
+    assert gz.read_bytes() == first                       # byte-identical: safe to commit and regenerate
+    _, again, _, _ = load(str(gz))
+    assert [c.sha for c in again] == [c.sha for c in changes]

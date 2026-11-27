@@ -1,0 +1,19 @@
+{
+ "repository": "https://github.com/getsentry/sentry-python",
+ "commit": "566beb013a983bbcf8bd2423e07ec2818054f9ac",
+ "window": [
+  "2024-07-01",
+  "2026-11-01"
+ ],
+ "ai_instruction_files_first_added": {
+  "AGENTS.md": "2026-03-04",
+  "CLAUDE.md": "2026-03-04",
+  ".cursor": "2025-06-24"
+ },
+ "adoption_marker": "2025-06-24",
+ "mainline_commits_before_marker": 495,
+ "mainline_commits_after_marker": 1580,
+ "ai_signed_share_before": 0.0,
+ "ai_signed_share_after": 0.0487,
+ "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
+}
