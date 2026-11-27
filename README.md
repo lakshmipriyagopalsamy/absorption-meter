@@ -179,8 +179,8 @@ scripts/reproduce.sh                               # regenerate all example outp
 ## Citing
 
 Cite the software as: Gopalsamy, L. P. *absorption-meter* (software). Zenodo.
-[doi:10.5281/zenodo.24521870](https://doi.org/10.5281/zenodo.24521870) (all versions; v0.1.1 is
-[10.5281/zenodo.24521871](https://doi.org/10.5281/zenodo.24521871)). See also [`CITATION.cff`](CITATION.cff).
+[doi:10.5281/zenodo.24521870](https://doi.org/10.5281/zenodo.24521870) (all versions; v0.3.0, which produced the article's worked example, is
+[10.5281/zenodo.24600745](https://doi.org/10.5281/zenodo.24600745)). See also [`CITATION.cff`](CITATION.cff).
 The worked example in the accompanying article uses the v0.3 rework rule; `tests/test_paper_numbers.py`
 checks every number in it on every change. Results from earlier versions remain reproducible with
 `--rework-rule legacy` (checked by `test_legacy_rule_reproduces_v0_2_homebrew_exactly`). The ideas were first presented in *The AI Velocity Paradox*
