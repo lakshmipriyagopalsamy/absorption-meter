@@ -45,6 +45,12 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
     out.append("")
     out.append(f"{_VERDICT[rec.verdict]}: {rec.reading}")
     out.append("")
+    if rec.cautions:
+        out.append("**Cautions: AR_repo may overstate absorption**")
+        out.append("")
+        for c in rec.cautions:
+            out.append(f"- {c}")
+        out.append("")
     if rec.actions:
         out.append("Suggested order: protect contracts and verify critical behavior first, and close telemetry "
                    "gaps that block diagnosis; move simplification earlier when change cost is the dominant "
@@ -66,15 +72,17 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
     out.append("## Month by month")
     out.append("")
     cols = [("month", "Month"), ("changes", "Changes"), ("absorption_ratio", "AR_repo"), ("rework_rate", "Rework"),
-            ("untested_share", "Untested"),
+            ("untested_share", "Untested"), ("late_rework_rate", "Late rework"),
             ("median_lines", "Median lines"), ("mean_dirs", "Areas/change"), ("revert_rate", "Reverts"),
             ("releases", "Releases"), ("recovery_hours", "Recovery h"), ("contract_drift", "Drift")]
     if analysis.pr_data:
         cols += [("median_lead_hours", "Lead h"), ("median_first_review_hours", "1st review h"),
-                 ("review_comments_per_100_lines", "Comments/100 lines")]
+                 ("review_comments_per_100_lines", "Comments/100 lines"), ("unreviewed_share", "Unreviewed"),
+                 ("examined_absorption_ratio", "Examined AR")]
     if analysis.team_data:
         team = [("time_to_detect_hours", "Detect h"), ("telemetry_coverage", "Telemetry"),
-                ("mutation_score", "Mutation"), ("critical_verified", "Critical verified")]
+                ("mutation_score", "Mutation"), ("critical_verified", "Critical verified"),
+                ("escaped_defects", "Escaped defects"), ("days_to_first_defect", "Days to 1st defect")]
         cols += [(a, l) for a, l in team if any(getattr(r, a) is not None for r in analysis.months)]
     out.append("| " + " | ".join(label for _, label in cols) + " |")
     out.append("|" + "---|" * len(cols))
@@ -102,6 +110,12 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
                "misses silent fixes and can count unrelated fixes to busy files, so read trends, not levels: each "
                "measure is compared with this repository's own trailing baseline. The most recent "
                f"{analysis.rework_window_days} days are left out of rework because their window hasn't closed.")
+    out.append("")
+    out.append("Low rework can mean a change was solid, or that nobody looked closely and its defects surfaced "
+               "later. Late rework (fixes "
+               f"{analysis.rework_window_days + 1}-{analysis.late_window_days} days after merging, shown once that "
+               "window has closed), examined absorption and unreviewed share (with --github), and escaped defects "
+               "(team data) help tell the two apart; when they point the other way, the report lists cautions.")
     out.append("")
     out.append(f"_absorption-meter {__version__}_")
     return "\n".join(out) + "\n"

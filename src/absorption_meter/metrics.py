@@ -67,6 +67,12 @@ class MonthStats:
     production: Optional[float] = None
     absorbed: Optional[float] = None
     absorption_ratio: Optional[float] = None
+    # Late rework: reworked 15-90 days after merging (beyond W, within the late window), over changes
+    # whose late window has closed. Catches defects that surface weeks later but are fixed in the repo.
+    late_rework_rate: Optional[float] = None
+    # Examined absorption (needs pull-request data): the size-weighted share of matured changes that
+    # were absorbed AND reviewed by someone other than the author. AR minus this is unexamined absorption.
+    examined_absorption_ratio: Optional[float] = None
     releases: int = 0
     patch_release_rate: Optional[float] = None
     recovery_hours: Optional[float] = None
@@ -77,6 +83,9 @@ class MonthStats:
     telemetry_coverage: Optional[float] = None
     mutation_score: Optional[float] = None
     critical_verified: Optional[float] = None
+    escaped_defects: Optional[int] = None            # defects found after release (production, field)
+    escaped_defects_per_100: Optional[float] = None  # per 100 changes that month
+    days_to_first_defect: Optional[float] = None     # median days from release to first escaped defect
     # Filled from pull-request data when available.
     prs: Optional[int] = None
     median_lead_hours: Optional[float] = None
@@ -97,6 +106,7 @@ class Analysis:
     drift_events: List[DriftEvent] = field(default_factory=list)
     pr_data: bool = False
     team_data: bool = False
+    late_window_days: int = 90
 
 
 def size_weight(change: Change) -> float:
@@ -194,20 +204,30 @@ def monthly(
     rework_window_days: int = 14,
     min_releases: int = 6,
     as_of: Optional[int] = None,
+    late_window_days: int = 90,
+    reviewed: Optional[Dict[str, bool]] = None,
+    reviewed_from: Optional[int] = None,
 ) -> Analysis:
     """Aggregate changes into a contiguous month-by-month table.
 
     A change enters P and A only once its rework window has fully elapsed by ``as_of``, the analysis
     date. Pass the replay date to see what a team would have known then. Without ``as_of`` the newest
     change's time is used, which is conservative; the CLI passes the actual analysis date instead.
+
+    ``late_window_days`` sets the late-rework window. ``reviewed`` maps change shas (merge or squash
+    commits of pull requests) to whether someone other than the author reviewed them; when given,
+    examined absorption is computed, and changes with no pull request count as unexamined.
+    ``reviewed_from`` (a timestamp) limits that to months fully covered by the pull-request data.
     """
     if not changes:
         return Analysis([], 0, None, None, rework_window_days, False, list(drift_events))
 
     flags = rework_flags(changes, rework_window_days)
+    late_flags = rework_flags(changes, late_window_days) if late_window_days > rework_window_days else None
     last_ts = as_of if as_of is not None else max(c.timestamp for c in changes)
     # Changes too recent for their rework window to have closed are right-censored.
     censor_after = last_ts - rework_window_days * DAY
+    late_censor_after = last_ts - late_window_days * DAY
     reverted = {c.reverted_sha for c in changes if c.reverted_sha}
     lengths = sorted({len(r) for r in reverted})
 
@@ -241,6 +261,14 @@ def monthly(
                 row.production = round(sum(size_weight(c) for c in observable), 3)
                 row.absorbed = round(sum(size_weight(c) for c in observable if not flags[c.sha]), 3)
                 row.absorption_ratio = round(row.absorbed / row.production, 4) if row.production else None
+                covered = reviewed_from is None or month > month_of(reviewed_from)   # first month may be partial
+                if reviewed is not None and row.production and covered:
+                    examined = sum(size_weight(c) for c in observable if not flags[c.sha] and reviewed.get(c.sha))
+                    row.examined_absorption_ratio = round(examined / row.production, 4)
+            late_obs = [c for c in items if c.timestamp <= late_censor_after] if late_flags else []
+            if late_obs:
+                row.late_rework_rate = round(
+                    sum(late_flags[c.sha] and not flags[c.sha] for c in late_obs) / len(late_obs), 4)
         month_releases = [(failed, hours) for ts, failed, hours in releases if month_of(ts) == month]
         row.releases = len(month_releases)
         if month_releases:
@@ -261,6 +289,7 @@ def monthly(
         rework_window_days=rework_window_days,
         releases_used=releases_used,
         drift_events=list(drift_events),
+        late_window_days=late_window_days,
     )
 
 
@@ -279,6 +308,8 @@ TEAM_COLUMNS = {
     "telemetry_coverage": float,
     "mutation_score": float,
     "critical_verified": float,
+    "escaped_defects": int,
+    "days_to_first_defect": float,
     "change_failure_rate": float,
     "deployments": int,
 }
@@ -291,6 +322,8 @@ def load_team_metrics(analysis: Analysis, path: str) -> None:
     ``time_to_detect_hours``, ``telemetry_coverage`` (0-1, share of changes that
     ship with instrumentation), ``mutation_score`` (0-1, on critical test suites),
     ``critical_verified`` (0-1, share of critical requirements with automated verification),
+    ``escaped_defects`` (count of defects found after release, in production or the field),
+    ``days_to_first_defect`` (median days from release to the first escaped defect),
     ``change_failure_rate`` (0-1) and ``deployments``.
     Team values replace the repository proxies for the same month.
     """
@@ -311,5 +344,8 @@ def load_team_metrics(analysis: Analysis, path: str) -> None:
                 else:
                     setattr(row, column, cast(value))
     analysis.team_data = True
+    for row in analysis.months:
+        if row.escaped_defects is not None and row.changes:
+            row.escaped_defects_per_100 = round(100 * row.escaped_defects / row.changes, 3)
     if any(r.releases for r in analysis.months):
         analysis.releases_used = True

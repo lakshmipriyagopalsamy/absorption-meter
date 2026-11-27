@@ -12,3 +12,4 @@ planning/
 *.egg-info/
 CATS/
 paper/
+.idea/

@@ -6,6 +6,10 @@
 
 🔴 **Hold**: Production is rising while the absorption ratio (AR_repo) falls: pause expansion and use the diagnostic matrix to identify the control requiring investment.
 
+**Cautions: AR_repo may overstate absorption**
+
+- Late rework, fixes 15-90 days after merging, is rising (up (0.02 → 0.10)): defects are surfacing after the rework window, so AR_repo may overstate absorption. Consider a longer --rework-window.
+
 Suggested order: protect contracts and verify critical behavior first, and close telemetry gaps that block diagnosis; move simplification earlier when change cost is the dominant constraint. The order is a hypothesis, not a finding.
 
 1. R2 · Contracts first: version the schemas that drifted and fail CI on breaking changes.
@@ -25,23 +29,23 @@ A DORA metric that improves or holds while its paired indicator worsens signals 
 
 ## Month by month
 
-| Month | Changes | AR_repo | Rework | Untested | Median lines | Areas/change | Reverts | Releases | Recovery h | Drift | Detect h | Telemetry |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 2024-01 | 40 | 0.95 | 0.05 | 0.33 | 32 | 1.93 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-02 | 45 | 0.86 | 0.13 | 0.29 | 32 | 2 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-03 | 46 | 0.89 | 0.11 | 0.26 | 21 | 1.96 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-04 | 48 | 0.80 | 0.19 | 0.35 | 27 | 1.77 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-05 | 42 | 0.95 | 0.05 | 0.26 | 35 | 1.88 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-06 | 47 | 0.92 | 0.09 | 0.30 | 26 | 1.87 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-07 | 45 | 0.93 | 0.07 | 0.18 | 29 | 2.07 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-08 | 44 | 0.88 | 0.11 | 0.30 | 30 | 2 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-09 | 48 | 0.89 | 0.10 | 0.29 | 26 | 1.92 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-10 | 43 | 0.92 | 0.07 | 0.35 | 25 | 1.93 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-11 | 43 | 0.88 | 0.12 | 0.44 | 20 | 1.77 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2024-12 | 41 | 0.91 | 0.07 | 0.27 | 26 | 1.98 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
-| 2025-01 | 101 | 0.80 | 0.19 | 0.44 | 39 | 2.58 | 0.00 | 4 | – | 0 | 2.30 | 0.83 |
-| 2025-02 | 100 | 0.74 | 0.23 | 0.67 | 41 | 2.22 | 0.00 | 4 | – | 1 | 3.10 | 0.76 |
-| 2025-03 | 108 | 0.67 | 0.32 | 0.72 | 36 | 2.01 | 0.00 | 4 | – | 1 | 3.90 | 0.69 |
+| Month | Changes | AR_repo | Rework | Untested | Late rework | Median lines | Areas/change | Reverts | Releases | Recovery h | Drift | Detect h | Telemetry |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2024-01 | 40 | 0.95 | 0.05 | 0.33 | 0.00 | 32 | 1.93 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-02 | 45 | 0.86 | 0.13 | 0.29 | 0.07 | 32 | 2 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-03 | 46 | 0.89 | 0.11 | 0.26 | 0.04 | 21 | 1.96 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-04 | 48 | 0.80 | 0.19 | 0.35 | 0.02 | 27 | 1.77 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-05 | 42 | 0.95 | 0.05 | 0.26 | 0.00 | 35 | 1.88 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-06 | 47 | 0.92 | 0.09 | 0.30 | 0.00 | 26 | 1.87 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-07 | 45 | 0.93 | 0.07 | 0.18 | 0.02 | 29 | 2.07 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-08 | 44 | 0.88 | 0.11 | 0.30 | 0.05 | 30 | 2 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-09 | 48 | 0.89 | 0.10 | 0.29 | 0.04 | 26 | 1.92 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-10 | 43 | 0.92 | 0.07 | 0.35 | 0.02 | 25 | 1.93 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-11 | 43 | 0.88 | 0.12 | 0.44 | 0.09 | 20 | 1.77 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2024-12 | 41 | 0.91 | 0.07 | 0.27 | 0.17 | 26 | 1.98 | 0.00 | 2 | – | 0 | 1.50 | 0.90 |
+| 2025-01 | 101 | 0.80 | 0.19 | 0.44 | – | 39 | 2.58 | 0.00 | 4 | – | 0 | 2.30 | 0.83 |
+| 2025-02 | 100 | 0.74 | 0.23 | 0.67 | – | 41 | 2.22 | 0.00 | 4 | – | 1 | 3.10 | 0.76 |
+| 2025-03 | 108 | 0.67 | 0.32 | 0.72 | – | 36 | 2.01 | 0.00 | 4 | – | 1 | 3.90 | 0.69 |
 
 ## Contract drift
 
@@ -52,4 +56,6 @@ A DORA metric that improves or holds while its paired indicator worsens signals 
 
 AR_repo is the repository proxy for the absorption ratio: the size-weighted share of changes not reworked within the window. The full model's AR also requires a first-run CI pass, which version control does not record, so this tool reports AR_repo. Every measure is a proxy. Rework counts reverts and fix-like follow-ups to the same files; it misses silent fixes and can count unrelated fixes to busy files, so read trends, not levels: each measure is compared with this repository's own trailing baseline. The most recent 14 days are left out of rework because their window hasn't closed.
 
-_absorption-meter 0.1.1_
+Low rework can mean a change was solid, or that nobody looked closely and its defects surfaced later. Late rework (fixes 15-90 days after merging, shown once that window has closed), examined absorption and unreviewed share (with --github), and escaped defects (team data) help tell the two apart; when they point the other way, the report lists cautions.
+
+_absorption-meter 0.2.0_

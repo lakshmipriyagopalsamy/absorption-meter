@@ -5,4 +5,4 @@ paired metrics from the CATS framework: each speed metric read alongside a signa
 of whether the system is absorbing the change it receives.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"

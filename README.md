@@ -72,6 +72,7 @@ Options:
 | `--fail-on-signal` | Exit status 2 on a debt signal or a Hold, for CI gates |
 | `--recent 3 --baseline 6 --k 1` | Window sizes and sensitivity of the baseline comparison |
 | `--robust` | Median and MAD baseline instead of mean and standard deviation (resists outlier months) |
+| `--late-window 90` | Days for late rework: fixes after the 14-day window but within this many days |
 | `--input data.jsonl` | Analyze an exported dataset instead of a repository |
 | `--as-of YYYY-MM-DD` | Analysis date: changes whose 14-day window hasn't closed by then are left out of P and A (default: today, or `--until`; a dataset uses the date it was read) |
 
@@ -112,12 +113,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: lakshmipriyagopalsamy/absorption-meter@v0.1.1
+      - uses: lakshmipriyagopalsamy/absorption-meter@v0.2.0
         with: { github-prs: "true" }
 ```
 
 The report appears in the job summary. For production workflows, pin the action to the release's
-full commit SHA instead of the tag (`uses: lakshmipriyagopalsamy/absorption-meter@<sha>  # v0.1.1`).
+full commit SHA instead of the tag (`uses: lakshmipriyagopalsamy/absorption-meter@<sha>  # v0.2.0`).
 
 ## Scope and limitations
 
@@ -130,13 +131,25 @@ tests, instrument services or judge whether a human decision was a good one.
 | Automated verification | Share of code changes merged without test changes (a proxy); accepts team-reported mutation score or critical-requirements coverage | Partial |
 | Telemetry | Accepts team-reported telemetry coverage, time to detect and recovery time | Partial (team data) |
 | Simplification | Change cost: lines and top-level modules touched per change | Proxy |
-| Ownership and decisions | Pull-request decision latency and review depth (with `--github`); decision rules R0–R6 | Partial |
+| Ownership and decisions | Pull-request decision latency, review depth, unreviewed share and examined absorption (with `--github`); decision rules R0–R6 | Partial |
 
 ### What the measures can and can't tell you
 
 Every measure is a proxy. Rework is detected from reverts and fix-like follow-up changes to the same
 files: it misses silent fixes and can count unrelated fixes to busy files. Compare a repository with its
 own history, never with another team's numbers. Operational definitions of every measure are in the [playbook](docs/PLAYBOOK.md#9-operational-definitions).
+
+**Absorbed or unexamined?** Low rework can mean a change was solid, or that nobody looked closely and its
+defects surfaced later, in production or on field devices, outside the git window. Since v0.2.0 the
+report separates the two:
+- **Late rework:** fixes 15–90 days after merging (`--late-window`), over changes whose window has closed;
+- **Examined absorption** and **unreviewed share** (with `--github`): how much absorbed change was
+  actually reviewed by someone other than its author. A rising unreviewed share also fires R6;
+- **Escaped defects** and **days to first defect** (team data): failures git never sees. Rising escaped
+  defects fire R3.
+
+When these point the other way from AR_repo, the report lists **cautions** under the decision. Cautions
+qualify the verdict; they never change it on their own.
 
 ## Development
 
@@ -150,7 +163,9 @@ scripts/reproduce.sh                               # regenerate all example outp
 
 Cite the software as: Gopalsamy, L. P. *absorption-meter* (software). Zenodo.
 [doi:10.5281/zenodo.24521870](https://doi.org/10.5281/zenodo.24521870) (all versions; v0.1.1 is
-[10.5281/zenodo.24521871](https://doi.org/10.5281/zenodo.24521871)). See also [`CITATION.cff`](CITATION.cff). The ideas were first presented in *The AI Velocity Paradox*
+[10.5281/zenodo.24521871](https://doi.org/10.5281/zenodo.24521871)). See also [`CITATION.cff`](CITATION.cff).
+The worked example in the accompanying article was produced with v0.1.1; later versions reproduce the
+same numbers, and `tests/test_paper_numbers.py` checks this on every change. The ideas were first presented in *The AI Velocity Paradox*
 (October 2026) and at Raptors Conference 2026. An accompanying article is in preparation.
 
 ## License

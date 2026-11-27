@@ -37,6 +37,8 @@ def build_parser() -> argparse.ArgumentParser:
     a = sub.add_parser("analyze", help="paired metrics and monthly table")
     _common(a)
     a.add_argument("--rework-window", type=int, default=14, help="days after a change to look for rework (default 14)")
+    a.add_argument("--late-window", type=int, default=90,
+                   help="days for late rework: fixes after the rework window but within this many days (default 90)")
     a.add_argument("--recent", type=int, default=3, help="months in the recent window (default 3)")
     a.add_argument("--baseline", type=int, default=6, help="months in the trailing baseline (default 6)")
     a.add_argument("--k", type=float, default=1.0, help="baseline spreads a move must exceed (default 1)")
@@ -44,7 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="use the baseline median and MAD instead of mean and standard deviation (resists outliers)")
     a.add_argument("--input", metavar="JSONL", help="analyze an exported dataset instead of a repository")
     a.add_argument("--team-metrics", metavar="CSV", help="team-reported monthly measures: month, recovery_hours, "
-                   "time_to_detect_hours, telemetry_coverage, change_failure_rate, deployments")
+                   "time_to_detect_hours, telemetry_coverage, mutation_score, critical_verified, escaped_defects, "
+                   "days_to_first_defect, change_failure_rate, deployments")
     a.add_argument("--no-contracts", action="store_true", help="skip the contract-drift scan")
     a.add_argument("--github", metavar="OWNER/REPO", help="add pull-request measures from the GitHub API")
     a.add_argument("--max-prs", type=int, default=300, help="most PRs to read from GitHub (default 300)")
@@ -148,13 +151,19 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def _analyze(args, name, changes, tags, drift, as_of: Optional[int] = None) -> int:
-    analysis = monthly(changes, tags, drift, args.rework_window, as_of=as_of)
-    if not args.keep_current_month:
-        analysis = drop_incomplete_last_month(analysis)
+    prs, reviewed, reviewed_from = None, None, None
     if args.github:
-        from .github import fetch_merged_prs, merge_into, pr_monthly
+        from .github import earliest_merge, fetch_merged_prs, reviewed_map
 
         prs = fetch_merged_prs(args.github, args.since, args.max_prs)
+        reviewed, reviewed_from = reviewed_map(prs), earliest_merge(prs)
+    analysis = monthly(changes, tags, drift, args.rework_window, as_of=as_of, late_window_days=args.late_window,
+                       reviewed=reviewed, reviewed_from=reviewed_from)
+    if not args.keep_current_month:
+        analysis = drop_incomplete_last_month(analysis)
+    if prs is not None:
+        from .github import merge_into, pr_monthly
+
         merge_into(analysis, pr_monthly(prs))
         name = args.github
     if args.team_metrics:

@@ -134,7 +134,7 @@ As a GitHub Action, with `fetch-depth: 0` so the whole history is available:
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }
-- uses: lakshmipriyagopalsamy/absorption-meter@v0.1.1
+- uses: lakshmipriyagopalsamy/absorption-meter@v0.2.0
   with: { github-prs: "true" }
 ```
 
@@ -166,6 +166,7 @@ owner, and run the tool again next month (section 7 has the 30-day path).
 | `--format json -o report.json` | Feed a dashboard or keep a monthly record |
 | `--as-of YYYY-MM-DD` | Analysis date. Changes whose 14-day window hasn't closed by then are left out (default: today) |
 | `--robust` | Median-based baseline, steadier when one unusual month would skew the comparison |
+| `--late-window 90` | Late rework: fixes after the 14-day window but within this many days |
 
 **Sharing results without sharing code.** `export` writes a dataset with change sizes, file paths, fix
 and revert markers and release tags, and **no names, e-mail addresses, commit messages or code**:
@@ -271,6 +272,11 @@ Exactly what `absorption-meter` computes. Defaults are in brackets; all are conf
 | Verification effectiveness (team, primary) | Team-reported mutation score on critical behavior (`mutation_score`), or the share of critical requirements with automated verification (`critical_verified`), in the team CSV. Either replaces the repository proxy when present; mutation score is preferred if both are given | 0–1 (higher is better) |
 | A (absorption) | Σ *s(c)* over matured changes not reworked. The full model also requires a first-run CI pass; without CI data the tool computes the repository proxy, **AR_repo** | size-weighted changes / month |
 | AR | A ÷ P. The tool reports **AR_repo**, A without the first-run CI term, because version control does not record CI results | 0–1 |
+| Late rework | Of the changes whose late window [90 days] has closed, the share reworked after *W* days but within the late window (same rule as rework). Catches defects that surface weeks later but are fixed in the repository | share |
+| Examined absorption | With pull-request data: size-weighted share of matured changes that were absorbed **and** reviewed by someone other than the author. Changes without a pull request count as unexamined; months before the pull-request data begins are left blank. AR_repo minus this is unexamined absorption | 0–1 |
+| Unreviewed share | With pull-request data: share of the month's merged pull requests with no review from anyone but the author. A rising share fires R6 | share |
+| Escaped defects (team) | Defects found after release, in production or the field (`escaped_defects` in the team CSV), per 100 changes; `days_to_first_defect` is the median days from release to the first. Rising escaped defects, or a falling time to first defect, fire R3 | per 100 changes; days |
+| Cautions | Signs that AR_repo may overstate absorption: examined absorption falling or far below AR_repo, unreviewed share rising, late rework rising, escaped defects rising. Listed under the decision; they never change the verdict on their own | – |
 | D (delivery debt) | Running total of P − A: change shipped but not absorbed. Records debt incurred and never decreases; remediation is tracked separately. Not a measure of technical debt in the code | size-weighted changes |
 | Contract drift | A change to an OpenAPI/Swagger or JSON Schema file that breaks compatibility while its version (`info.version`, `version` or `$id`) is unchanged. A version change that keeps the major number is also counted. *Breaking:* a removed path, operation or 2xx response; a removed response property, or one no longer required; a newly required request parameter or property; a changed type; an enum value removed from a request. Moved or deleted files are not counted | events per 100 changes / month |
 | Change cost | Median lines changed per change, and mean number of top-level directories touched per change | lines; directories |

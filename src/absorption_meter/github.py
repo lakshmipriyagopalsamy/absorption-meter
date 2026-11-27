@@ -2,7 +2,8 @@
 
 Adds the decision-side measures that git history can't show: time to first
 review, lead time from PR opened to merged, review comments per changed line,
-and the share of PRs merged without review.
+the share of PRs merged without review, and, per merged change, whether
+someone other than the author reviewed it (for examined absorption).
 
 Uses a token from ``GITHUB_TOKEN`` when set (needed for private repositories and
 higher rate limits). Each PR costs two API calls beyond the listing, so the
@@ -15,7 +16,7 @@ import json
 import os
 import re
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 from statistics import median
 from typing import Any, Callable, Dict, List, Optional
 
@@ -98,6 +99,7 @@ def _enrich(owner_repo: str, item: Dict[str, Any], author: str, fetch: Fetch) ->
         "review_comments": int(detail.get("review_comments") or 0),
         "additions": int(detail.get("additions") or 0),
         "deletions": int(detail.get("deletions") or 0),
+        "merge_commit_sha": detail.get("merge_commit_sha") or item.get("merge_commit_sha"),
     }
 
 
@@ -136,6 +138,19 @@ def pr_monthly(prs: List[Dict[str, Any]]) -> Dict[str, Dict[str, Optional[float]
             "median_pr_lines": float(median(sizes)) if sizes else None,
         }
     return result
+
+
+def reviewed_map(prs: List[Dict[str, Any]]) -> Dict[str, bool]:
+    """Map each PR's merge (or squash) commit sha to whether someone other than the author reviewed it."""
+    return {pr["merge_commit_sha"]: bool(pr.get("review_rounds"))
+            for pr in prs if pr.get("merge_commit_sha")}
+
+
+def earliest_merge(prs: List[Dict[str, Any]]) -> Optional[int]:
+    """Timestamp of the oldest merged PR read (PR data is complete only after this)."""
+    times = [_parse_time(pr.get("merged_at")) for pr in prs]
+    times = [t for t in times if t]
+    return int(min(times).replace(tzinfo=timezone.utc).timestamp()) if times else None
 
 
 def merge_into(analysis, monthly_prs: Dict[str, Dict[str, Optional[float]]]) -> None:

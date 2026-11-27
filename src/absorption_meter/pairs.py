@@ -68,6 +68,8 @@ class Recommendation:
     rules: List[str] = field(default_factory=list)
     actions: List[str] = field(default_factory=list)
     reading: str = ""
+    # Signs that AR may overstate absorption. They never change the verdict; they qualify it.
+    cautions: List[str] = field(default_factory=list)
 
 
 def _fmt(value: Optional[float]) -> str:
@@ -115,6 +117,15 @@ def trend(
     return Trend(direction, round(b, 4), round(r, 4))
 
 
+def lagged_trend(rows: Sequence[MonthStats], attr: str, settings: Settings = Settings(), **kw) -> Trend:
+    """Like ``trend``, but ending at the latest month that has a value. For measures that need a long
+    observation window (late rework), the newest months are always empty."""
+    last = max((i for i, r in enumerate(rows) if getattr(r, attr) is not None), default=None)
+    if last is None:
+        return Trend(NA, None, None)
+    return trend(rows[:last + 1], attr, settings, **kw)
+
+
 def _status(dora_ok: bool, worsening: bool, available: bool) -> str:
     if not available:
         return INSUFFICIENT
@@ -144,6 +155,11 @@ def indicators(analysis: Analysis, s: Settings) -> Dict[str, Trend]:
         "median_first_review_hours": trend(rows, "median_first_review_hours", s),
         "review_comments_per_100_lines": trend(rows, "review_comments_per_100_lines", s),
         "median_pr_lines": trend(rows, "median_pr_lines", s),
+        "unreviewed_share": trend(rows, "unreviewed_share", s, abs_min=0.05),
+        "examined_absorption_ratio": trend(rows, "examined_absorption_ratio", s, abs_min=0.03),
+        "late_rework_rate": lagged_trend(rows, "late_rework_rate", s, abs_min=0.02),
+        "escaped_defects_per_100": trend(rows, "escaped_defects_per_100", s, abs_min=0.5),
+        "days_to_first_defect": trend(rows, "days_to_first_defect", s, rel_min=0.20),
     }
     return t
 
@@ -242,6 +258,32 @@ def evaluate(analysis: Analysis, settings: Optional[Settings] = None) -> List[Pa
 
 
 ORDER = ("contract", "verification", "observability", "coupling")
+def cautions(analysis: Analysis, t: Dict[str, Trend], ar: Trend) -> List[str]:
+    """Low rework can mean a change was solid, or that nobody looked closely and its defects surfaced
+    outside the rework window. These signals say when AR may overstate absorption."""
+    out = []
+    holding = ar.direction in (FLAT, UP)
+    ex = t["examined_absorption_ratio"]
+    if ex.direction == DOWN and holding:
+        out.append(f"Examined absorption is falling ({ex}) while AR_repo holds: more of the absorbed change "
+                   "was merged without review, so low rework may mean unexamined rather than absorbed.")
+    elif ex.recent is not None and ar.recent is not None and ar.recent - ex.recent >= 0.15:
+        out.append(f"Only {ex.recent:.0%} of change was both absorbed and reviewed, against an AR_repo of "
+                   f"{ar.recent:.0%}: a large share of 'absorbed' change was never reviewed.")
+    if t["unreviewed_share"].direction == UP:
+        out.append(f"The share of pull requests merged without review is rising ({t['unreviewed_share']}).")
+    late = t["late_rework_rate"]
+    if late.direction == UP:
+        out.append(f"Late rework, fixes {analysis.rework_window_days + 1}-{analysis.late_window_days} days after "
+                   f"merging, is rising ({late}): defects are surfacing after the rework window, so AR_repo "
+                   "may overstate absorption. Consider a longer --rework-window.")
+    if t["escaped_defects_per_100"].direction == UP:
+        out.append(f"Escaped defects per 100 changes are rising ({t['escaped_defects_per_100']}).")
+    if t["days_to_first_defect"].direction == DOWN:
+        out.append(f"Defects are reaching users sooner after release ({t['days_to_first_defect']} days).")
+    return out
+
+
 ACTIONS = {
     "contract": "R2 · Contracts first: version the schemas that drifted and fail CI on breaking changes.",
     "verification": "R3 · Automated verification: acceptance tests from the spec, property or mutation tests where verification is weakest and rework is highest.",
@@ -268,11 +310,12 @@ def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recomm
         "contract": t["contract_drift_per_100"].direction == UP or (
             recent_drift > 0 and t["contract_drift_per_100"].direction != DOWN),
         "verification": t["rework_rate"].direction == UP or t["untested_share"].direction == UP
-                        or t["mutation_score"].direction == DOWN or t["critical_verified"].direction == DOWN,
+                        or t["mutation_score"].direction == DOWN or t["critical_verified"].direction == DOWN
+                        or t["escaped_defects_per_100"].direction == UP or t["days_to_first_defect"].direction == DOWN,
         "observability": t["time_to_detect_hours"].direction == UP or t["recovery_hours"].direction == UP
                          or t["telemetry_coverage"].direction == DOWN,
         "coupling": t["mean_dirs"].direction == UP or t["median_lines"].direction == UP,
-        "decision": t["median_first_review_hours"].direction == UP or (
+        "decision": t["median_first_review_hours"].direction == UP or t["unreviewed_share"].direction == UP or (
             t["median_pr_lines"].direction == UP and t["review_comments_per_100_lines"].direction == DOWN),
     }
     # R3 applies when verification weakens or rework rises, and contract drift doesn't explain it.
@@ -293,6 +336,8 @@ def recommend(analysis: Analysis, settings: Optional[Settings] = None) -> Recomm
         rec.reading = ("The absorption ratio (AR_repo) is steady or rising and no indicator has fired: conditions support "
                        "cautiously expanding AI-assisted delivery while monitoring the paired indicators. "
                        "A steady ratio is not proof of safety.")
+
+    rec.cautions = cautions(analysis, t, ar)
 
     for kind in ORDER:
         if fired[kind]:
