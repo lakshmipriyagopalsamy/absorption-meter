@@ -7,9 +7,9 @@
  ],
  "ai_instruction_files_first_added": {},
  "adoption_marker": null,
- "mainline_commits_before_marker": 614,
+ "mainline_commits_before_marker": 611,
  "mainline_commits_after_marker": 0,
- "ai_signed_share_before": 0.0309,
+ "ai_signed_share_before": 0.0311,
  "ai_signed_share_after": null,
  "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
 }

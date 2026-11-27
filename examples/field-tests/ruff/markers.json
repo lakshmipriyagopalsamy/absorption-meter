@@ -10,8 +10,8 @@
   "CLAUDE.md": "2026-01-04"
  },
  "adoption_marker": "2026-01-04",
- "mainline_commits_before_marker": 6108,
- "mainline_commits_after_marker": 4438,
+ "mainline_commits_before_marker": 6131,
+ "mainline_commits_after_marker": 4436,
  "ai_signed_share_before": 0.0008,
  "ai_signed_share_after": 0.0347,
  "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."

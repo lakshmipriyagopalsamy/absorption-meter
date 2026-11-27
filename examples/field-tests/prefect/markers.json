@@ -9,9 +9,9 @@
   "AGENTS.md": "2025-06-16"
  },
  "adoption_marker": "2025-06-16",
- "mainline_commits_before_marker": 2006,
+ "mainline_commits_before_marker": 2012,
  "mainline_commits_after_marker": 3182,
- "ai_signed_share_before": 0.009,
+ "ai_signed_share_before": 0.0089,
  "ai_signed_share_after": 0.5346,
  "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
 }

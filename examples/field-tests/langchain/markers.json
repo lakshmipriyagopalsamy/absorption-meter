@@ -11,8 +11,8 @@
   ".github/copilot-instructions.md": "2025-07-21"
  },
  "adoption_marker": "2025-07-21",
- "mainline_commits_before_marker": 3618,
- "mainline_commits_after_marker": 3296,
+ "mainline_commits_before_marker": 3632,
+ "mainline_commits_after_marker": 3295,
  "ai_signed_share_before": 0.0011,
  "ai_signed_share_after": 0.0188,
  "note": "AI-instruction files mark project-level adoption, not how much code AI wrote. AI signatures (co-author trailers, agent names) undercount AI use."
