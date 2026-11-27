@@ -72,6 +72,7 @@ Options:
 | `--fail-on-signal` | Exit status 2 on a debt signal or a Hold, for CI gates |
 | `--recent 3 --baseline 6 --k 1` | Window sizes and sensitivity of the baseline comparison |
 | `--robust` | Median and MAD baseline instead of mean and standard deviation (resists outlier months) |
+| `--prs prs.json` | Pull-request data saved as JSON (the records `--github` reads), analyzed offline |
 | `--late-window 90` | Days for late rework: fixes after the 14-day window but within this many days |
 | `--input data.jsonl` | Analyze an exported dataset instead of a repository |
 | `--as-of YYYY-MM-DD` | Analysis date: changes whose 14-day window hasn't closed by then are left out of P and A (default: today, or `--until`; a dataset uses the date it was read) |
@@ -113,12 +114,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: lakshmipriyagopalsamy/absorption-meter@v0.2.0
+      - uses: lakshmipriyagopalsamy/absorption-meter@v0.2.1
         with: { github-prs: "true" }
 ```
 
 The report appears in the job summary. For production workflows, pin the action to the release's
-full commit SHA instead of the tag (`uses: lakshmipriyagopalsamy/absorption-meter@<sha>  # v0.2.0`).
+full commit SHA instead of the tag (`uses: lakshmipriyagopalsamy/absorption-meter@<sha>  # v0.2.1`).
 
 ## Scope and limitations
 
@@ -143,13 +144,22 @@ own history, never with another team's numbers. Operational definitions of every
 defects surfaced later, in production or on field devices, outside the git window. Since v0.2.0 the
 report separates the two:
 - **Late rework:** fixes 15–90 days after merging (`--late-window`), over changes whose window has closed;
-- **Examined absorption** and **unreviewed share** (with `--github`): how much absorbed change was
+- **Examined absorption** and **unreviewed share** (with `--github` or `--prs`): how much absorbed change was
   actually reviewed by someone other than its author. A rising unreviewed share also fires R6;
 - **Escaped defects** and **days to first defect** (team data): failures git never sees. Rising escaped
   defects fire R3.
 
 When these point the other way from AR_repo, the report lists **cautions** under the decision. Cautions
 qualify the verdict; they never change it on their own.
+
+See it in one command, with no GitHub token: the `examples/unexamined/` team keeps AR_repo near 0.89, so AR
+alone says *Scale cautiously*, while its review and defect data turn the verdict to *Address* with five
+cautions:
+
+```bash
+absorption-meter analyze --input examples/unexamined/changes.jsonl \
+  --prs examples/unexamined/prs.json --team-metrics examples/unexamined/team.csv
+```
 
 ## Development
 

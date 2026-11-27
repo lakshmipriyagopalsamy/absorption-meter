@@ -60,4 +60,4 @@ AR_repo is the repository proxy for the absorption ratio: the size-weighted shar
 
 Low rework can mean a change was solid, or that nobody looked closely and its defects surfaced later. Late rework (fixes 15-90 days after merging, shown once that window has closed), examined absorption and unreviewed share (with --github), and escaped defects (team data) help tell the two apart; when they point the other way, the report lists cautions.
 
-_absorption-meter 0.2.0_
+_absorption-meter 0.2.1_

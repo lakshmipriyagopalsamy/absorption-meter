@@ -1,6 +1,6 @@
 {
   "tool": "absorption-meter",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "repository": "https://github.com/Homebrew/brew",
   "absorption_ratio_kind": "AR_repo",
   "analysis": {

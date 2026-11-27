@@ -134,7 +134,7 @@ As a GitHub Action, with `fetch-depth: 0` so the whole history is available:
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }
-- uses: lakshmipriyagopalsamy/absorption-meter@v0.2.0
+- uses: lakshmipriyagopalsamy/absorption-meter@v0.2.1
   with: { github-prs: "true" }
 ```
 
@@ -166,6 +166,7 @@ owner, and run the tool again next month (section 7 has the 30-day path).
 | `--format json -o report.json` | Feed a dashboard or keep a monthly record |
 | `--as-of YYYY-MM-DD` | Analysis date. Changes whose 14-day window hasn't closed by then are left out (default: today) |
 | `--robust` | Median-based baseline, steadier when one unusual month would skew the comparison |
+| `--prs prs.json` | Pull-request data saved as JSON (the records `--github` reads), analyzed offline |
 | `--late-window 90` | Late rework: fixes after the 14-day window but within this many days |
 
 **Sharing results without sharing code.** `export` writes a dataset with change sizes, file paths, fix

@@ -16,9 +16,11 @@ from absorption_meter.pairs import Settings, trend
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EX = os.path.join(ROOT, "examples")
 
+U = os.path.join(EX, "unexamined")
 CASES = [
     ("demo", ["--team-metrics", os.path.join(EX, "demo", "team.csv")]),
     ("homebrew", []),
+    ("unexamined", ["--prs", os.path.join(U, "prs.json"), "--team-metrics", os.path.join(U, "team.csv")]),
 ]
 
 
@@ -98,3 +100,18 @@ def test_replay_uses_only_matured_changes():
     # 28 March's window runs to 11 April, past the 1 April replay date: excluded. 2 March has matured.
     assert march.changes == 2 and march.absorption_ratio == 1.0
     assert march.production == round(math.log1p(10), 3)
+
+
+def test_unexamined_demo_ar_alone_says_scale_but_review_and_defect_data_say_address(tmp_path):
+    """The LinkedIn question in one dataset: low rework, but because nobody looked, not because it was solid."""
+    ar_only, full = tmp_path / "ar.json", tmp_path / "full.json"
+    data = os.path.join(U, "changes.jsonl")
+    main(["analyze", "--input", data, "--late-window", "14", "--format", "json", "-o", str(ar_only)])
+    main(["analyze", "--input", data, "--prs", os.path.join(U, "prs.json"), "--team-metrics",
+          os.path.join(U, "team.csv"), "--format", "json", "-o", str(full)])
+    a, f = json.loads(ar_only.read_text())["decision"], json.loads(full.read_text())["decision"]
+    assert a["verdict"] == "scale" and a["cautions"] == []
+    assert f["verdict"] == "address" and {"R3", "R6"} <= set(f["rules"])
+    assert any("unexamined" in c for c in f["cautions"]) and any("Escaped defects" in c for c in f["cautions"])
+    with open(os.path.join(U, "report_ar_only.md"), encoding="utf-8") as fh:
+        assert "Scale cautiously" in fh.read()

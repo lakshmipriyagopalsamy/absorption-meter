@@ -28,6 +28,24 @@ absorption-meter analyze --input examples/demo/changes.jsonl --team-metrics exam
 
 Files: `make_demo.py` (deterministic generator), `changes.jsonl`, `team.csv`, `report.md`, `report.json`.
 
+## `unexamined/`: absorbed or unexamined?
+
+A small fictional team adopts AI assistance in January 2025. Output nearly doubles and short-term rework
+stays low, so AR_repo holds around 0.89. But reviews thin out: the share of pull requests merged without
+review rises from 5% to 45%, and defects start reaching the field sooner. AR alone says **Scale
+cautiously** (`report_ar_only.md`). With the pull-request data and the team's defect counts, the verdict
+is **Address**, with rules R3 and R6 and five cautions, including examined absorption falling from 0.82 to
+0.47 (`report.md`).
+
+```bash
+absorption-meter analyze --input examples/unexamined/changes.jsonl \
+  --prs examples/unexamined/prs.json --team-metrics examples/unexamined/team.csv
+```
+
+Files: `make_unexamined.py` (deterministic generator), `changes.jsonl`, `prs.json` (pull-request records
+in the form `--github` reads; no names), `team.csv` (escaped defects), `report.md`, `report.json`,
+`report_ar_only.md`.
+
 ## `homebrew/`: a worked example on real data
 
 The mainline history of [Homebrew/brew](https://github.com/Homebrew/brew), a public, PR-based project

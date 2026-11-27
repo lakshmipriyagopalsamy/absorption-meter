@@ -51,6 +51,8 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--no-contracts", action="store_true", help="skip the contract-drift scan")
     a.add_argument("--github", metavar="OWNER/REPO", help="add pull-request measures from the GitHub API")
     a.add_argument("--max-prs", type=int, default=300, help="most PRs to read from GitHub (default 300)")
+    a.add_argument("--prs", metavar="JSON", help="pull-request data saved as JSON (the records --github reads), "
+                   "instead of calling the GitHub API")
     a.add_argument("--format", choices=("markdown", "json"), default="markdown")
     a.add_argument("--output", "-o", help="write the report to this file instead of stdout")
     a.add_argument("--keep-current-month", action="store_true", help="keep the unfinished current month")
@@ -152,10 +154,16 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 def _analyze(args, name, changes, tags, drift, as_of: Optional[int] = None) -> int:
     prs, reviewed, reviewed_from = None, None, None
-    if args.github:
+    if args.prs or args.github:
         from .github import earliest_merge, fetch_merged_prs, reviewed_map
 
-        prs = fetch_merged_prs(args.github, args.since, args.max_prs)
+        if args.prs:
+            import json
+
+            with open(args.prs, encoding="utf-8") as fh:
+                prs = json.load(fh)
+        else:
+            prs = fetch_merged_prs(args.github, args.since, args.max_prs)
         reviewed, reviewed_from = reviewed_map(prs), earliest_merge(prs)
     analysis = monthly(changes, tags, drift, args.rework_window, as_of=as_of, late_window_days=args.late_window,
                        reviewed=reviewed, reviewed_from=reviewed_from)
@@ -165,7 +173,7 @@ def _analyze(args, name, changes, tags, drift, as_of: Optional[int] = None) -> i
         from .github import merge_into, pr_monthly
 
         merge_into(analysis, pr_monthly(prs))
-        name = args.github
+        name = args.github or name
     if args.team_metrics:
         load_team_metrics(analysis, args.team_metrics)
     settings = Settings(recent=args.recent, baseline=args.baseline, k=args.k, robust=args.robust)
