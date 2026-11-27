@@ -41,6 +41,12 @@ corrective work**. It is not a direct measure of correctness, reliability or qua
 Watch AR's **trend** against your own history. A falling AR while P rises is the clearest single sign
 that you are taking on change faster than you can absorb it.
 
+**A steady AR is not the same as a safe one.** Low rework can mean a change was solid, or that nobody
+looked closely and its defects surfaced weeks later, in production or on field devices, outside the
+rework window. Check three things beside AR: how much absorbed change was actually **reviewed**, whether
+fixes are arriving **late** (15–90 days after a change), and whether **escaped defects** are rising. The
+tool reports all three and lists cautions when they disagree with AR.
+
 ## 3. Where delivery debt hides
 
 | Debt | How it shows up with AI | CATS control | Leading indicator | Paired DORA metric |
@@ -49,7 +55,7 @@ that you are taking on change faster than you can absorb it.
 | **Verification** | Tests mirror the implementation: green, but behavior unchecked | **A**: acceptance tests from the spec, property and mutation tests | Verification effectiveness: mutation score on critical behavior, or critical requirements with automated tests. Proxy: code changes without test changes. Outcome: rework rate | Deployment frequency |
 | **Observability** | New code paths ship without instrumentation; failures found late | **T**: SLOs, instrumentation as part of done | Telemetry coverage; time to detect | Recovery time |
 | **Coupling** | Each change touches more of the system | **S**: simplification budget, deletion, module boundaries | Change cost: areas and lines per change | Lead time |
-| **Decision** | Rubber-stamp reviews, undocumented hotfixes, no clear owner | **Governance** (below) | Decision latency; review depth relative to PR size | Lead time |
+| **Decision** | Rubber-stamp reviews, undocumented hotfixes, no clear owner | **Governance** (below) | Decision latency; review depth relative to PR size; share of PRs merged without review | Lead time |
 
 **Governance is the layer under all four controls, not a fifth letter.** Someone named owns intent,
 domain behavior, the definition of done, and every high-risk call. CATS makes those decisions cheaper and
@@ -85,10 +91,10 @@ teams differ too much.
 | **R0 · Scale cautiously** | AR steady or rising, no indicator fired | Conditions support cautiously expanding AI-assisted delivery, while monitoring the paired indicators. A steady AR is not proof of safety |
 | **R1 · Hold** | P rising while AR falls | Pause expansion; use the diagnostic matrix (section 3) to identify the control requiring investment |
 | **R2** | Contract drift rising | Invest in **C** first |
-| **R3** | Verification weakening or rework rising, and contract drift flat | Invest in **A** |
+| **R3** | Verification weakening, rework rising, or escaped defects rising, and contract drift flat | Invest in **A** |
 | **R4** | Time to detect or recover rising, or telemetry coverage falling | Invest in **T** |
 | **R5** | Change cost rising | Invest in **S**: a simplification budget, sized to the share of code AI writes |
-| **R6** | Decision latency rising, or review depth falling as PRs grow | Cap PR size; require decision records for high-risk changes |
+| **R6** | Decision latency rising, review depth falling as PRs grow, or more PRs merged without review | Cap PR size; require review and decision records for high-risk changes |
 
 **When several fire,** prioritize contract integrity and verification of critical behavior, and close
 telemetry gaps that prevent diagnosis. The default order is C → A → T → S: contracts define what to
@@ -117,6 +123,16 @@ team, where every signal fires:
 
 ```bash
 absorption-meter analyze --input examples/demo/changes.jsonl --team-metrics examples/demo/team.csv
+```
+
+To see why a healthy-looking AR isn't enough, run the second demo, a small team whose AR stays near
+0.89 while reviews thin out and field defects rise. AR alone says *Scale cautiously*; with the review and
+defect data the verdict is *Address*, with cautions:
+
+```bash
+absorption-meter analyze --input examples/unexamined/changes.jsonl --late-window 14      # AR alone
+absorption-meter analyze --input examples/unexamined/changes.jsonl \
+  --prs examples/unexamined/prs.json --team-metrics examples/unexamined/team.csv          # with review and defect data
 ```
 
 The tool reads mainline history and gives you P, A and AR_repo by month, rework, change cost, revert and
@@ -150,10 +166,14 @@ another team's numbers.
    🔴 *Hold* (R1): production is rising while AR_repo falls, so pause expanding AI use. 🟡 *Address*:
    an indicator has moved; the rule that fired (R2–R6) names the CATS control to strengthen first.
    ⚪ *Not enough history*: fewer than nine months.
+   **Cautions**, when listed, say AR_repo may overstate absorption: absorbed change that wasn't
+   reviewed, fixes arriving late, or escaped defects rising. They don't change the verdict, but treat a
+   healthy-looking AR with suspicion until you've checked them.
 2. **Paired metrics.** Each DORA metric beside its earlier signal. ⚠️ *debt signal* means the DORA metric
    held or improved while its indicator worsened.
-3. **Month by month.** Changes, AR_repo, rework, untested share, change size and modules touched. Read
-   the trend, not a single month.
+3. **Month by month.** Changes, AR_repo, rework, late rework, untested share, change size and modules
+   touched; with pull-request data, also unreviewed share and examined AR; with team data, escaped
+   defects. Read the trend, not a single month.
 4. **Contract drift.** Schema changes that broke compatibility without a version bump, with what broke.
 
 **Acting on it.** Pick the one control the rules point to, set a target for its indicator, name an
@@ -190,9 +210,12 @@ You can measure every number by hand, monthly, in a spreadsheet:
    files within 14 days? A ≈ P × (1 − rework share).
 4. **Contract drift:** how many API or event schema changes broke compatibility without a version bump?
 5. **Change cost:** median lines changed, and top-level modules touched, per PR.
-6. **Decision latency:** median hours from PR opened to first review.
+6. **Decision latency:** median hours from PR opened to first review. Also count the PRs merged with no
+   review from anyone but the author.
 7. **Telemetry coverage:** of last month's changes, how many shipped with the logs, metrics or traces
    needed to see them fail?
+8. **Late and escaped defects:** how many fixes landed 15–90 days after the change they repaired, and
+   how many defects reached production or the field?
 
 ## 7. Getting started
 
@@ -287,7 +310,6 @@ Exactly what `absorption-meter` computes. Defaults are in brackets; all are conf
 | Lead time | Median hours from PR opened to merged (GitHub API) | hours |
 | Decision latency | Median hours from PR opened to the first review submitted by someone other than the author (GitHub API; bot-authored PRs excluded) | hours |
 | Review depth | Review comments per 100 changed lines, over the month's merged PRs | comments / 100 lines |
-| Unreviewed share | Merged PRs with no review by someone other than the author | share |
 | Telemetry coverage | Team-reported: the share of the month's changes that shipped with the logs, metrics or traces needed to detect their failure. Decide the checklist as a team, for example as a PR-template checkbox | share |
 | Time to detect | Team-reported: median hours from a failure starting to its detection | hours |
 | Trend | Mean of the last [3] months against the previous [6]. A move counts when the difference exceeds both [1] × the baseline spread (standard deviation, or 1.4826 × MAD with `--robust`) and a practical minimum: 2 points for rework and AR, 5 for patch-release rate and telemetry coverage, 1 for revert rate, 0.5 per 100 for drift, 20% for recovery and detection times, 10% otherwise | up / down / flat |
