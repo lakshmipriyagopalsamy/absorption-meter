@@ -121,3 +121,10 @@ def test_field_test_sentence_matches_the_summary():
     says("eight further public projects that adopted AI tooling, and two that did not")
     says("change size grew after adoption in seven of the eight, but $\\AR_{\\text{repo}}$ fell in only three, "
          "and the rules also fired on projects without AI")
+    # "Rising change cost was the most consistent signal": R5 is the most frequent rule (or tied) in 7 of 8.
+    def top_rules(r):
+        counts = {k: int(v) for k, v in (x.split("×") for x in r["top_rules_after"].split())}
+        best = max(counts.values())
+        return {k for k, v in counts.items() if v == best}
+    assert sum("R5" in top_rules(r) for r in ai) == 7
+    says("rising change cost was the most consistent signal")
