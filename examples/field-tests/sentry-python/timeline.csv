@@ -4,8 +4,8 @@ as_of,verdict,rules,pairs_signalling_debt
 2025-03,address,R3,–
 2025-04,address,R3,Deployment frequency
 2025-05,address,R3,Deployment frequency
-2025-06,address,R3,–
-2025-07,scale,R0,–
+2025-06,scale,R0,–
+2025-07,address,R3,–
 2025-08,address,R5,Lead time
 2025-09,address,R4,–
 2025-10,address,R3 R4 R5,Lead time
@@ -15,7 +15,7 @@ as_of,verdict,rules,pairs_signalling_debt
 2026-02,address,R3 R5,Lead time
 2026-03,hold,R1 R3 R5,Lead time
 2026-04,address,R5,Lead time
-2026-05,address,R5,Lead time
+2026-05,hold,R1 R3 R5,Lead time
 2026-06,scale,R0,–
 2026-07,address,R5,Lead time
 2026-08,address,R5,Lead time

@@ -31,11 +31,12 @@ def main() -> None:
     ap.add_argument("out_dir")
     ap.add_argument("--from", dest="start", help="first month to evaluate (YYYY-MM)")
     ap.add_argument("--robust", action="store_true")
+    ap.add_argument("--rework-rule", choices=("strict", "legacy"), default="strict")
     args = ap.parse_args()
 
     meta, changes, tags, drift = load(args.dataset)
     settings = Settings(robust=args.robust)
-    full = monthly(changes, tags, drift)
+    full = monthly(changes, tags, drift, rework_rule=args.rework_rule)
     os.makedirs(args.out_dir, exist_ok=True)
 
     with open(os.path.join(args.out_dir, "monthly.csv"), "w", newline="") as fh:
@@ -52,7 +53,8 @@ def main() -> None:
             continue
         cut = month_end(r.month)
         upto = [c for c in changes if c.timestamp < cut]
-        a = monthly(upto, [t for t in tags if t[0] < cut], [d for d in drift if d.timestamp < cut], as_of=cut)
+        a = monthly(upto, [t for t in tags if t[0] < cut], [d for d in drift if d.timestamp < cut], as_of=cut,
+                    rework_rule=args.rework_rule)
         rec = recommend(a, settings)
         pairs = [p.pair.split(" ↔")[0] for p in evaluate(a, settings) if p.status == DEBT]
         last = a.months[-1]

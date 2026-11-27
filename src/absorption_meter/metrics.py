@@ -25,6 +25,49 @@ FIX_PATTERN = re.compile(
     r"\b(fix(e[sd])?|bug(fix)?|hotfix|regression|revert(ed|s)?|broke(n)?|rollback|roll back|patch(ed)?)\b",
     re.IGNORECASE,
 )
+# v0.3 (docs/METHOD-v0.3.md): maintenance titles that mention "fix" are not fixes.
+NOT_FIX_PATTERN = re.compile(
+    r"^\s*(chore|build|ci|docs?|style|tests?|refactor|perf|release|bump)\b|"
+    r"^\s*\w+\((deps?|dependencies|ci|docs?|build|release|lint)\)|\bbump(s|ed)?\b|\btypos?\b",
+    re.IGNORECASE,
+)
+# v0.3: files that link unrelated changes to fixes because most changes touch them.
+HUB_PATTERN = re.compile(
+    r"(^|/)(CHANGELOG|CHANGES|HISTORY|NEWS|RELEASE)[^/]*$|"
+    r"(^|/)(Cargo\.toml|package\.json|pyproject\.toml|setup\.py|setup\.cfg|go\.mod|Gemfile|[^/]*\.gemspec|pom\.xml|"
+    r"build\.gradle(\.kts)?|requirements[^/]*\.txt)$|"
+    r"(^|/)(VERSION|version\.py|_version\.py|version\.txt)$|^\.github/",
+    re.IGNORECASE,
+)
+HUB_SHARE = 0.10        # a path touched by more than this share of changes is a hub ...
+HUB_MIN_CHANGES = 100   # ... in a history of at least this many changes
+RULES = ("strict", "legacy")
+
+
+def is_fix(change: Change, rule: str = "strict") -> bool:
+    """Whether a change looks like a fix under the given rework rule."""
+    if rule == "legacy":
+        return change.fix_legacy if change.fix_legacy is not None else bool(FIX_PATTERN.search(change.subject))
+    if change.fix_strict is not None:
+        return change.fix_strict
+    if change.fix_legacy is not None:      # an older dataset: only the legacy flag was recorded
+        return change.fix_legacy
+    return bool(FIX_PATTERN.search(change.subject)) and not NOT_FIX_PATTERN.search(change.subject)
+
+
+def hub_paths(changes: Sequence[Change]) -> set:
+    """Paths excluded from fix linkage under the strict rule: hub patterns, plus paths touched by more than
+    HUB_SHARE of the changes (only in histories of at least HUB_MIN_CHANGES changes)."""
+    counts: Dict[str, int] = {}
+    for c in changes:
+        for p in set(c.paths):
+            counts[p] = counts.get(p, 0) + 1
+    hubs = {p for p in counts if HUB_PATTERN.search(p)}
+    if len(changes) >= HUB_MIN_CHANGES:
+        hubs |= {p for p, n in counts.items() if n > HUB_SHARE * len(changes)}
+    return hubs
+
+
 _SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 
 # Test files, by common conventions across ecosystems.
@@ -107,6 +150,7 @@ class Analysis:
     pr_data: bool = False
     team_data: bool = False
     late_window_days: int = 90
+    rework_rule: str = "strict"
 
 
 def size_weight(change: Change) -> float:
@@ -119,7 +163,7 @@ def _shares_path(a: Change, b: Change) -> bool:
     return bool(set(a.paths) & set(b.paths))
 
 
-def rework_flags(changes: Sequence[Change], window_days: int = 14) -> Dict[str, bool]:
+def rework_flags(changes: Sequence[Change], window_days: int = 14, rule: str = "strict") -> Dict[str, bool]:
     """Flag each change that was reworked within ``window_days``.
 
     A change counts as reworked if a later change reverts it, or if a later change
@@ -130,8 +174,14 @@ def rework_flags(changes: Sequence[Change], window_days: int = 14) -> Dict[str, 
     Each fix or revert looks back through a per-file (and per-commit-prefix) index
     of the changes in its window, so the cost grows with the number of fixes and
     the files they touch rather than with every pair of changes.
+
+    ``rule="strict"`` (default, v0.3) ignores maintenance titles and links only through non-hub files;
+    ``rule="legacy"`` is the v0.1/v0.2 rule (docs/METHOD-v0.3.md).
     """
+    if rule not in RULES:
+        raise ValueError(f"unknown rework rule {rule!r}")
     ordered = sorted(changes, key=lambda c: c.timestamp)
+    hubs = hub_paths(ordered) if rule == "strict" else set()
     window = window_days * DAY
     flagged = [False] * len(ordered)
     by_path: Dict[str, List[int]] = {}      # path -> indices of earlier changes touching it
@@ -143,8 +193,8 @@ def rework_flags(changes: Sequence[Change], window_days: int = 14) -> Dict[str, 
             for i in by_prefix.get(target[:7], ()):
                 if ordered[i].timestamp >= cutoff:
                     flagged[i] = True
-        if FIX_PATTERN.search(later.subject):
-            for path in set(later.paths):
+        if is_fix(later, rule):
+            for path in set(later.paths) - hubs:
                 hits = by_path.get(path)
                 if not hits:
                     continue
@@ -154,7 +204,7 @@ def rework_flags(changes: Sequence[Change], window_days: int = 14) -> Dict[str, 
                 for i in hits[k:]:
                     flagged[i] = True
                 del hits[:k]                  # older entries can never fall inside a later window
-        for path in set(later.paths):
+        for path in set(later.paths) - hubs:
             by_path.setdefault(path, []).append(j)
         by_prefix.setdefault(later.sha[:7], []).append(j)
     return {c.sha: flagged[i] for i, c in enumerate(ordered)}
@@ -207,6 +257,7 @@ def monthly(
     late_window_days: int = 90,
     reviewed: Optional[Dict[str, bool]] = None,
     reviewed_from: Optional[int] = None,
+    rework_rule: str = "strict",
 ) -> Analysis:
     """Aggregate changes into a contiguous month-by-month table.
 
@@ -222,8 +273,8 @@ def monthly(
     if not changes:
         return Analysis([], 0, None, None, rework_window_days, False, list(drift_events))
 
-    flags = rework_flags(changes, rework_window_days)
-    late_flags = rework_flags(changes, late_window_days) if late_window_days > rework_window_days else None
+    flags = rework_flags(changes, rework_window_days, rework_rule)
+    late_flags = rework_flags(changes, late_window_days, rework_rule) if late_window_days > rework_window_days else None
     last_ts = as_of if as_of is not None else max(c.timestamp for c in changes)
     # Changes too recent for their rework window to have closed are right-censored.
     censor_after = last_ts - rework_window_days * DAY
@@ -290,6 +341,7 @@ def monthly(
         releases_used=releases_used,
         drift_events=list(drift_events),
         late_window_days=late_window_days,
+        rework_rule=rework_rule,
     )
 
 

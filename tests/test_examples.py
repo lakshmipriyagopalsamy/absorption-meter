@@ -128,3 +128,17 @@ def test_gzip_dataset_round_trip(tmp_path):
     assert gz.read_bytes() == first                       # byte-identical: safe to commit and regenerate
     _, again, _, _ = load(str(gz))
     assert [c.sha for c in again] == [c.sha for c in changes]
+
+
+def test_legacy_rule_reproduces_v0_2_homebrew_exactly(tmp_path):
+    """--rework-rule legacy must give the v0.1/v0.2 numbers (and the article's v0.1.1 results) unchanged."""
+    import subprocess
+    import sys
+
+    out = tmp_path / "legacy"
+    subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "rule_timeline.py"),
+                    os.path.join(EX, "homebrew", "changes.jsonl"), str(out), "--from", "2025-01",
+                    "--rework-rule", "legacy"], check=True, capture_output=True)
+    for name in ("monthly.csv", "timeline.csv"):
+        with open(os.path.join(EX, "homebrew", "legacy-v0.2", name)) as fh:
+            assert (out / name).read_text() == fh.read(), name

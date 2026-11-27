@@ -35,7 +35,7 @@ def to_markdown(name: str, analysis: Analysis, pairs: List[PairResult], rec: Rec
     out.append("")
     out.append(
         f"{analysis.total_changes} mainline changes, {analysis.first} to {analysis.last}. "
-        f"Rework window {analysis.rework_window_days} days. "
+        f"Rework window {analysis.rework_window_days} days ({analysis.rework_rule} rule). "
         f"Deployment frequency uses {'releases (tags)' if analysis.releases_used else 'merged changes'}. "
         f"Pull-request data: {'yes' if analysis.pr_data else 'no'}. "
         f"Team data: {'yes' if analysis.team_data else 'no'}."

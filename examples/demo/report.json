@@ -1,6 +1,6 @@
 {
   "tool": "absorption-meter",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "repository": "demo team (synthetic)",
   "absorption_ratio_kind": "AR_repo",
   "analysis": {
@@ -530,7 +530,8 @@
     ],
     "pr_data": false,
     "team_data": true,
-    "late_window_days": 90
+    "late_window_days": 90,
+    "rework_rule": "strict"
   },
   "decision": {
     "verdict": "hold",

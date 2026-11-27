@@ -33,6 +33,9 @@ for d in examples/field-tests/*/; do
 done
 if ls examples/field-tests/*/markers.json >/dev/null 2>&1; then $PY scripts/field_summary.py; fi
 
+# Legacy (v0.1/v0.2) against strict (v0.3) rework rule on every real dataset.
+$PY scripts/rule_comparison.py >/dev/null
+
 # Figure data.
 mkdir -p figures
 $PY scripts/simulate_model.py figures/model.dat

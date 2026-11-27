@@ -24,7 +24,7 @@ from typing import IO, Iterable, List, Optional, Sequence, Tuple
 from . import __version__
 from .contracts import Breaking, DriftEvent
 from .gitlog import Change, FileChange
-from .metrics import FIX_PATTERN
+from .metrics import is_fix
 
 FORMAT = "absorption-meter/changes@1"
 
@@ -35,7 +35,8 @@ def _change_record(c: Change) -> dict:
         "sha": c.sha,
         "t": c.timestamp,
         "parents": c.parents,
-        "fix": bool(FIX_PATTERN.search(c.subject)),
+        "fix": is_fix(c, "strict"),
+        "fix_legacy": is_fix(c, "legacy"),
         "reverts": c.reverted_sha,
         "files": [[f.path, f.added, f.deleted] for f in c.files],
     }
@@ -84,7 +85,10 @@ def read_dataset(lines: Iterable[str]) -> Tuple[dict, List[Change], List[Tuple[i
             subject = "fix" if rec.get("fix") else "change"
             body = f"This reverts commit {rec['reverts']}." if rec.get("reverts") else ""
             files = [FileChange(p, int(a), int(d)) for p, a, d in rec.get("files", [])]
-            changes.append(Change(rec["sha"], int(rec["t"]), list(rec.get("parents", [])), "", subject, body, files))
+            legacy = rec.get("fix_legacy")
+            changes.append(Change(rec["sha"], int(rec["t"]), list(rec.get("parents", [])), "", subject, body, files,
+                                  fix_strict=bool(rec["fix"]) if legacy is not None else None,
+                                  fix_legacy=bool(legacy) if legacy is not None else bool(rec.get("fix"))))
         elif kind == "drift":
             drift.append(DriftEvent(rec["sha"], int(rec["t"]), rec["path"], rec.get("old_version"),
                                     rec.get("new_version"), [Breaking(k, loc) for k, loc in rec.get("breaking", [])]))

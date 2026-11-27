@@ -45,37 +45,43 @@ Results are in [`summary.md`](summary.md) (also [`summary.csv`](summary.csv)). E
    - Of the two references, fastapi's changes got smaller (78 → 42) and poetry's grew modestly (24 → 31).
    - Change cost (R5) is the most frequent rule, or tied for most frequent, in seven of the eight
      AI-marker projects. This matches the Homebrew example and published evidence that complexity rises after AI-editor adoption.
-2. **AR_repo fell after adoption in three projects** (sentry-python 0.79 → 0.59, excalidraw 0.53 → 0.43,
-   langchain 0.63 → 0.53). It held or rose in the other five.
+2. **AR_repo fell after adoption in three projects** (sentry-python 0.86 → 0.64, langchain 0.78 → 0.64,
+   excalidraw 0.66 → 0.55). It held or rose in the other five.
    - Production more than doubled at sentry-python (+191%) and deno (+108%).
-   - Deno (4 months), sentry-python (3) and excalidraw (2) returned **hold** in the replay, and so did biome (1).
+   - Deno and sentry-python (4 months each), biome (2) and excalidraw (1) returned **hold** in the replay.
 3. **The rules are not an AI detector.** The two reference projects also return hold and address
-   verdicts: fastapi's rework rose from 2% to 13% with no AI marker. The framework measures absorption,
+   verdicts: fastapi's rework rose from 1% to 10% with no AI marker. The framework measures absorption,
    whatever drives it.
 4. **Prefect is the clearest AI-adoption case.** 53% of its commits after the marker carry an AI
-   co-author signature, yet its AR_repo rose (0.75 → 0.83) and its replay returned **scale** most often.
+   co-author signature, yet its AR_repo rose (0.78 → 0.84) and its replay returned **scale** most often.
    - Its production fell 53% over the same period. That may reflect changes in the repository's structure
      as much as AI use.
    - Heavy AI use with a healthy AR_repo is exactly the case v0.2's review and late-defect measures exist
      to examine further.
 
-## Limitation found: rework detection in busy repositories
+## Limitation found, and the fix in v0.3
 
-**Levels of AR_repo are not comparable across projects.** In large, busy repositories, the file-based
-rework rule over-counts, for two reasons:
-- **Hub files:** files that most changes touch link unrelated changes to later fixes. Examples are deno's
+The first run, with the v0.2 rework rule, showed that file-linked rework over-counts in busy repositories,
+for two reasons:
+- **Hub files:** files most changes touch link unrelated changes to later fixes. Examples are deno's
   `tests/node_compat/config.jsonc` (493 links) and `Cargo.toml` (263), biome's `CHANGELOG.md` (121), and
   zed's `crates/editor/src/editor.rs` (376).
-- **Conventional-commit "fix" titles:** they make fix-like changes common (61% of deno's commits, 45% of
-  biome's).
+- **Conventional-commit titles:** titles such as `fix(deps): bump x` count as fixes.
 
-As a result, zed, deno, biome and ruff show AR_repo around 0.3–0.5. Trends within a project, which is what
-the rules use, are unaffected by a constant bias, but cross-project comparisons of levels are not
-meaningful.
+v0.3 tightens the rule. It ignores maintenance titles and links fixes only through non-hub files. The rule
+was specified in [docs/METHOD-v0.3.md](../../docs/METHOD-v0.3.md) and committed before it was applied to
+any data. All numbers above use it.
 
-A planned improvement is to ignore hub files (manifests, changelogs, shared configuration) when linking
-fixes to changes, or to require overlapping lines rather than files. It will be optional, so that published
-results, including the Homebrew worked example, stay reproducible.
+[`../rule_comparison.md`](../rule_comparison.md) compares the two rules on every dataset:
+- **Busy projects:** AR_repo rises markedly (biome 0.44 → 0.64, langchain 0.56 → 0.69, excalidraw
+  0.44 → 0.57, deno 0.30 → 0.40).
+- **Homebrew worked example:** it barely moves (0.75 → 0.77), and its replay verdicts are unchanged.
+- **Zed and ruff:** levels stay low (0.37, 0.53). Their remaining links run through large core files touched
+  by fewer than 10% of changes, which only line-level linkage, tracing the exact lines a fix changes, would
+  resolve.
+
+**Compare AR_repo trends within a project, not levels across projects.** The v0.2 rule remains available as
+`--rework-rule legacy`.
 
 ## Reproduce
 

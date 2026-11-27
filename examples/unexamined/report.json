@@ -1,6 +1,6 @@
 {
   "tool": "absorption-meter",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "repository": "small team (synthetic): absorbed or unexamined?",
   "absorption_ratio_kind": "AR_repo",
   "analysis": {
@@ -509,7 +509,8 @@
     "drift_events": [],
     "pr_data": true,
     "team_data": true,
-    "late_window_days": 90
+    "late_window_days": 90,
+    "rework_rule": "strict"
   },
   "decision": {
     "verdict": "address",

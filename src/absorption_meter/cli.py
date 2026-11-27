@@ -37,6 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
     a = sub.add_parser("analyze", help="paired metrics and monthly table")
     _common(a)
     a.add_argument("--rework-window", type=int, default=14, help="days after a change to look for rework (default 14)")
+    a.add_argument("--rework-rule", choices=("strict", "legacy"), default="strict",
+                   help="strict (default): ignore maintenance titles and hub files when linking fixes; "
+                   "legacy: the v0.1/v0.2 rule (see docs/METHOD-v0.3.md)")
     a.add_argument("--late-window", type=int, default=90,
                    help="days for late rework: fixes after the rework window but within this many days (default 90)")
     a.add_argument("--recent", type=int, default=3, help="months in the recent window (default 3)")
@@ -166,7 +169,7 @@ def _analyze(args, name, changes, tags, drift, as_of: Optional[int] = None) -> i
             prs = fetch_merged_prs(args.github, args.since, args.max_prs)
         reviewed, reviewed_from = reviewed_map(prs), earliest_merge(prs)
     analysis = monthly(changes, tags, drift, args.rework_window, as_of=as_of, late_window_days=args.late_window,
-                       reviewed=reviewed, reviewed_from=reviewed_from)
+                       reviewed=reviewed, reviewed_from=reviewed_from, rework_rule=args.rework_rule)
     if not args.keep_current_month:
         analysis = drop_incomplete_last_month(analysis)
     if prs is not None:

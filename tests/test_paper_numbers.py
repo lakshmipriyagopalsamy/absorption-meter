@@ -61,8 +61,8 @@ def test_adoption_markers():
 
 def test_baseline_and_first_hold():
     base_p = mean(col(BASELINE, "production"))
-    assert round(base_p) == 285 and round(mean(col(BASELINE, "absorption_ratio")), 2) == 0.79
-    says("$P$ averaged 285 a month and $\\AR_{\\text{repo}}$ 0.79")
+    assert round(base_p) == 285 and round(mean(col(BASELINE, "absorption_ratio")), 2) == 0.80
+    says("$P$ averaged 285 a month and $\\AR_{\\text{repo}}$ 0.80")
     aug_p, aug_ar = col(["2025-08"], "production")[0], col(["2025-08"], "absorption_ratio")[0]
     assert 1.9 <= aug_p / base_p < 2.0 and round(aug_ar, 2) == 0.63              # "nearly doubled"
     assert REPLAY["2025-08"]["verdict"] == "hold" and REPLAY["2025-08"]["rules"] == "R1 R3 R5"
@@ -87,15 +87,15 @@ def test_change_cost_then_second_hold():
     says("R5 fired from February, as median change size grew from 13 lines in November 2025 to about 50 in May to July 2026")
     ratio = mean(col(MAY_JUL, "production")) / mean(col(BASELINE, "production"))
     assert round(ratio) == 4
-    assert round(mean(col(MAY_JUL, "absorption_ratio")), 2) == 0.57
+    assert round(mean(col(MAY_JUL, "absorption_ratio")), 2) == 0.58
     assert round(mean(col(MAY_JUL, "rework_rate")), 2) == 0.36
     assert [m for m, r in REPLAY.items() if m >= "2026-01" and r["verdict"] == "hold"] == MAY_JUL
-    says("about four times its 2025 baseline while $\\AR_{\\text{repo}}$ averaged 0.57 and rework 0.36")
+    says("about four times its 2025 baseline while $\\AR_{\\text{repo}}$ averaged 0.58 and rework 0.36")
 
 
-def test_robust_baseline_holds_only_may_to_july_2026():
-    assert [m for m, r in ROBUST.items() if r["verdict"] == "hold"] == MAY_JUL
-    says("return hold only in May to July 2026")
+def test_robust_baseline_holds_only_may_to_august_2026():
+    assert [m for m, r in ROBUST.items() if r["verdict"] == "hold"] == MAY_JUL + ["2026-08"]
+    says("return hold only in May to August 2026")
 
 
 def test_figure_data_matches_outputs():
@@ -105,3 +105,19 @@ def test_figure_data_matches_outputs():
         assert abs(float(p) - float(MONTHLY[month]["production"])) < 0.051
         assert abs(float(ar) - float(MONTHLY[month]["absorption_ratio"])) < 1e-4
         assert (hold == "1") == (REPLAY.get(month, {}).get("verdict") == "hold")
+
+
+def test_field_test_sentence_matches_the_summary():
+    """Section VII's one-sentence summary of the ten field tests must match examples/field-tests/summary.csv."""
+    with open(os.path.join(ROOT, "examples", "field-tests", "summary.csv"), newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    ai = [r for r in rows if r["marker"]]
+    assert len(ai) == 8 and len(rows) - len(ai) == 2
+    grew = sum(float(r["median_lines_after"]) > float(r["median_lines_before"]) for r in ai)
+    fell = sum(float(r["AR_after"]) < float(r["AR_before"]) - 0.02 for r in ai)
+    fired_without_ai = all(int(r["hold_months_after"]) + int(r["address_months_after"]) > 0
+                           for r in rows if not r["marker"])
+    assert (grew, fell, fired_without_ai) == (7, 3, True)
+    says("eight further public projects that adopted AI tooling, and two that did not")
+    says("change size grew after adoption in seven of the eight, but $\\AR_{\\text{repo}}$ fell in only three, "
+         "and the rules also fired on projects without AI")

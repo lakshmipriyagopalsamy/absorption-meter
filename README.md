@@ -73,6 +73,7 @@ Options:
 | `--recent 3 --baseline 6 --k 1` | Window sizes and sensitivity of the baseline comparison |
 | `--robust` | Median and MAD baseline instead of mean and standard deviation (resists outlier months) |
 | `--prs prs.json` | Pull-request data saved as JSON (the records `--github` reads), analyzed offline |
+| `--rework-rule legacy` | The v0.2 rework rule (v0.3 default: ignore maintenance titles and hub files when linking fixes) |
 | `--late-window 90` | Days for late rework: fixes after the 14-day window but within this many days |
 | `--input data.jsonl` | Analyze an exported dataset instead of a repository |
 | `--as-of YYYY-MM-DD` | Analysis date: changes whose 14-day window hasn't closed by then are left out of P and A (default: today, or `--until`; a dataset uses the date it was read) |
@@ -118,12 +119,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: lakshmipriyagopalsamy/absorption-meter@v0.2.1
+      - uses: lakshmipriyagopalsamy/absorption-meter@v0.3.0
         with: { github-prs: "true" }
 ```
 
 The report appears in the job summary. For production workflows, pin the action to the release's
-full commit SHA instead of the tag (`uses: lakshmipriyagopalsamy/absorption-meter@<sha>  # v0.2.1`).
+full commit SHA instead of the tag (`uses: lakshmipriyagopalsamy/absorption-meter@<sha>  # v0.3.0`).
 
 ## Scope and limitations
 
@@ -141,7 +142,9 @@ tests, instrument services or judge whether a human decision was a good one.
 ### What the measures can and can't tell you
 
 Every measure is a proxy. Rework is detected from reverts and fix-like follow-up changes to the same
-files: it misses silent fixes and can count unrelated fixes to busy files. Compare a repository with its
+files: it misses silent fixes. Since v0.3 it ignores maintenance titles and hub files (changelogs,
+manifests, files most changes touch), which removed most over-counting in busy repositories
+([comparison](examples/rule_comparison.md)), but very busy codebases can still over-count. Compare a repository with its
 own history, never with another team's numbers. Operational definitions of every measure are in the [playbook](docs/PLAYBOOK.md#9-operational-definitions).
 
 **Absorbed or unexamined?** Low rework can mean a change was solid, or that nobody looked closely and its
@@ -178,8 +181,9 @@ scripts/reproduce.sh                               # regenerate all example outp
 Cite the software as: Gopalsamy, L. P. *absorption-meter* (software). Zenodo.
 [doi:10.5281/zenodo.24521870](https://doi.org/10.5281/zenodo.24521870) (all versions; v0.1.1 is
 [10.5281/zenodo.24521871](https://doi.org/10.5281/zenodo.24521871)). See also [`CITATION.cff`](CITATION.cff).
-The worked example in the accompanying article was produced with v0.1.1; later versions reproduce the
-same numbers, and `tests/test_paper_numbers.py` checks this on every change. The ideas were first presented in *The AI Velocity Paradox*
+The worked example in the accompanying article uses the v0.3 rework rule; `tests/test_paper_numbers.py`
+checks every number in it on every change. Results from earlier versions remain reproducible with
+`--rework-rule legacy` (checked by `test_legacy_rule_reproduces_v0_2_homebrew_exactly`). The ideas were first presented in *The AI Velocity Paradox*
 (October 2026) and at Raptors Conference 2026. An accompanying article is in preparation.
 
 ## License

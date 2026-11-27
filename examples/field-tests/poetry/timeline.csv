@@ -1,7 +1,7 @@
 as_of,verdict,rules,pairs_signalling_debt
 2025-01,insufficient-data,–,–
 2025-02,insufficient-data,–,–
-2025-03,address,R3,Deployment frequency
+2025-03,hold,R1 R3,Deployment frequency
 2025-04,scale,R0,–
 2025-05,scale,R0,–
 2025-06,scale,R0,–
@@ -15,7 +15,7 @@ as_of,verdict,rules,pairs_signalling_debt
 2026-02,address,R3,–
 2026-03,scale,R0,–
 2026-04,scale,R0,–
-2026-05,hold,R1 R3,–
+2026-05,hold,R1,–
 2026-06,scale,R0,–
 2026-07,address,R3,–
 2026-08,address,R3,–

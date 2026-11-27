@@ -8,8 +8,11 @@ from absorption_meter.metrics import FIX_PATTERN, rework_flags
 DAY = 86400
 
 
-def reference(changes, window_days=14):
+def reference(changes, window_days=14, rule="legacy"):
+    from absorption_meter.metrics import hub_paths, is_fix
+
     ordered = sorted(changes, key=lambda c: c.timestamp)
+    hubs = hub_paths(ordered) if rule == "strict" else set()
     flags = {}
     for i, change in enumerate(ordered):
         reworked = False
@@ -20,7 +23,7 @@ def reference(changes, window_days=14):
             if r and (change.sha.startswith(r) or r.startswith(change.sha[:7])):
                 reworked = True
                 break
-            if FIX_PATTERN.search(later.subject) and set(change.paths) & set(later.paths):
+            if is_fix(later, rule) and (set(change.paths) - hubs) & (set(later.paths) - hubs):
                 reworked = True
                 break
         flags[change.sha] = reworked
@@ -34,10 +37,13 @@ def test_indexed_detector_matches_reference_on_random_histories():
         for i in range(300):
             t += rng.randint(0, 2 * DAY)
             sha = f"{rng.getrandbits(160):040x}"
-            subject = rng.choice(["feature", "fix: bug", "refactor", "hotfix crash", "docs"])
+            subject = rng.choice(["feature", "fix: bug", "refactor", "hotfix crash", "docs", "fix(deps): bump x",
+                                  "chore: fix lint"])
             body = ""
             if changes and rng.random() < 0.05:
                 body = f"This reverts commit {rng.choice(changes).sha}."
-            files = [FileChange(f"m{rng.randint(1, 25)}.py", rng.randint(0, 50), 0) for _ in range(rng.randint(1, 3))]
+            files = [FileChange(rng.choice([f"m{rng.randint(1, 25)}.py", "Cargo.toml", "CHANGELOG.md"]), rng.randint(0, 50), 0)
+                     for _ in range(rng.randint(1, 3))]
             changes.append(Change(sha, t, [], "", subject, body, files))
-        assert rework_flags(changes) == reference(changes)
+        for rule in ("legacy", "strict"):
+            assert rework_flags(changes, rule=rule) == reference(changes, rule=rule)

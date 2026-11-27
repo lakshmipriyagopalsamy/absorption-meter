@@ -53,6 +53,9 @@ class Change:
     subject: str
     body: str = ""
     files: List[FileChange] = field(default_factory=list)
+    # Fix flags stored in datasets (which keep no messages). None means: decide from the subject.
+    fix_strict: Optional[bool] = None
+    fix_legacy: Optional[bool] = None
 
     @property
     def lines(self) -> int:

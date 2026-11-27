@@ -82,3 +82,17 @@ def test_no_tags_and_no_team_metrics_leave_those_measures_empty():
 def test_empty_input_gives_empty_analysis():
     a = monthly([])
     assert a.months == [] and a.total_changes == 0
+
+
+def test_strict_rule_ignores_maintenance_titles_and_hub_files():
+    from absorption_meter.metrics import hub_paths, is_fix
+
+    assert is_fix(_c(1, T0, "fix: crash on save")) and is_fix(_c(1, T0, "Fix login regression"))
+    for title in ("fix(deps): bump serde", "chore: fix lint", "fix: bump version", "docs: fix typo", "ci: fix workflow"):
+        assert not is_fix(_c(1, T0, title)) and is_fix(_c(1, T0, title), "legacy")
+    base = _c(1, T0, path="Cargo.toml")
+    fix = _c(2, T0 + DAY, "fix: build", path="Cargo.toml")
+    assert rework_flags([base, fix], 14, "legacy")[base.sha] is True
+    assert rework_flags([base, fix], 14, "strict")[base.sha] is False          # linked only through a manifest
+    busy = [_c(i, T0 + i * 3600, path="src/core.rs") for i in range(150)]       # touched by every change
+    assert "src/core.rs" in hub_paths(busy) and "src/core.rs" not in hub_paths(busy[:50])

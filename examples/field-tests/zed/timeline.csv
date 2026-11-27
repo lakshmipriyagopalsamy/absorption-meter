@@ -2,7 +2,7 @@ as_of,verdict,rules,pairs_signalling_debt
 2025-01,insufficient-data,–,–
 2025-02,insufficient-data,–,–
 2025-03,hold,R1 R3 R5,Lead time
-2025-04,address,R3 R5,Lead time
+2025-04,hold,R1 R3 R5,Lead time
 2025-05,address,R5,Lead time
 2025-06,address,R5,Lead time
 2025-07,address,R5,Lead time

@@ -150,7 +150,7 @@ As a GitHub Action, with `fetch-depth: 0` so the whole history is available:
 ```yaml
 - uses: actions/checkout@v4
   with: { fetch-depth: 0 }
-- uses: lakshmipriyagopalsamy/absorption-meter@v0.2.1
+- uses: lakshmipriyagopalsamy/absorption-meter@v0.3.0
   with: { github-prs: "true" }
 ```
 
@@ -187,6 +187,7 @@ owner, and run the tool again next month (section 7 has the 30-day path).
 | `--as-of YYYY-MM-DD` | Analysis date. Changes whose 14-day window hasn't closed by then are left out (default: today) |
 | `--robust` | Median-based baseline, steadier when one unusual month would skew the comparison |
 | `--prs prs.json` | Pull-request data saved as JSON (the records `--github` reads), analyzed offline |
+| `--rework-rule legacy` | The v0.2 rework rule (v0.3 default: ignore maintenance titles and hub files when linking fixes) |
 | `--late-window 90` | Late rework: fixes after the 14-day window but within this many days |
 
 **Sharing results without sharing code.** `export` writes a dataset with change sizes, file paths, fix
@@ -290,7 +291,7 @@ Exactly what `absorption-meter` computes. Defaults are in brackets; all are conf
 | Size weight *s(c)* | ln(1 + lines added + lines deleted) | – |
 | Matured change | A change whose rework window [*W* = 14 days] has fully elapsed by the analysis date (today by default; `--as-of` or `--until` set it, and a dataset uses the date it was read). Only matured changes enter P, A, AR and rework | – |
 | P (production) | Σ *s(c)* over the month's matured changes | size-weighted changes / month |
-| Reworked | Within *W* days of merge, a later change reverts it (`This reverts commit <sha>`), or a later change whose message matches *fix, bug, hotfix, regression, revert, rollback, broke, patch* touches at least one of the same files | yes / no |
+| Reworked | Within *W* days of merge, a later change reverts it (`This reverts commit <sha>`), or a later fix touches at least one of the same files. A fix's title matches *fix, bug, hotfix, regression, revert, rollback, broke, patch*, but not a maintenance pattern (`chore:`, `fix(deps)`, `bump`, `typo`, …). Since v0.3, **hub files** don't count as shared: changelogs, package manifests, version files, `.github/`, and any file more than 10% of changes touch (in histories of 100+ changes). `--rework-rule legacy` restores the v0.2 rule. Full specification: [METHOD-v0.3](METHOD-v0.3.md) | yes / no |
 | Rework rate | Reworked matured changes ÷ matured changes (a count, not size-weighted). A DORA outcome, used here to corroborate | share |
 | Verification proxy (repository) | Share of the month's code changes merged without touching any test file. Test files follow common conventions (`test/`, `tests/`, `spec/`, `__tests__/`, `test_*.py`, `*_test.go`, `*.test.ts`, `*_spec.rb`, `*Test.java` …); changes touching only documentation or configuration are left out. Observable at merge; no window | share (lower is better) |
 | Verification effectiveness (team, primary) | Team-reported mutation score on critical behavior (`mutation_score`), or the share of critical requirements with automated verification (`critical_verified`), in the team CSV. Either replaces the repository proxy when present; mutation score is preferred if both are given | 0–1 (higher is better) |
